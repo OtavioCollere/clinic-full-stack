@@ -11,9 +11,12 @@ import { validateCNPJ } from "@/utils/validate-cnpj";
 import { createClinic } from "@/services/clinic/clinic.service";
 import { routes } from "@/lib/routes";
 import { useAuthContext } from "@/context/AuthContext";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
 
 export default function CreateClinic() {
   const router = useRouter();
+  const tenant = useTenant();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -130,7 +133,7 @@ export default function CreateClinic() {
 
       if(response.success){
         toast.success(response.message);
-        router.push("/franchise/create");
+        router.push(createTenantLink(tenant, "/franchise/create"));
       }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Erro ao criar clínica");

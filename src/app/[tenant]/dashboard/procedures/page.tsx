@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "../_components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit2, Trash2 } from "lucide-react";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
 
 interface Procedure {
   id: string;
@@ -54,6 +56,7 @@ const mockProcedures: Procedure[] = [
 
 export default function ProceduresPage() {
   const router = useRouter();
+  const tenant = useTenant();
   const [procedures] = useState<Procedure[]>(mockProcedures);
 
   const handleDelete = (id: string) => {
@@ -63,7 +66,7 @@ export default function ProceduresPage() {
 
   const handleEdit = (id: string) => {
     // TODO: Implement edit functionality
-    router.push(`/dashboard/procedures/${id}/edit`);
+    router.push(createTenantLink(tenant, `/dashboard/procedures/${id}/edit`));
   };
 
   return (
@@ -75,7 +78,7 @@ export default function ProceduresPage() {
             <p className="text-muted-foreground">Gerencie os procedimentos e preços da sua clínica</p>
           </div>
           <Button
-            onClick={() => router.push("/dashboard/procedures/create")}
+            onClick={() => router.push(createTenantLink(tenant, "/dashboard/procedures/create"))}
             className="bg-primary hover:bg-primary/90 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -136,7 +139,7 @@ export default function ProceduresPage() {
               Crie seu primeiro procedimento para começar
             </p>
             <Button
-              onClick={() => router.push("/dashboard/procedures/create")}
+              onClick={() => router.push(createTenantLink(tenant, "/dashboard/procedures/create"))}
               className="bg-primary hover:bg-primary/90 text-white"
             >
               Adicionar Procedimento

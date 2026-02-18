@@ -14,9 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
 
 export default function CreateProcedure() {
   const router = useRouter();
+  const tenant = useTenant();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     franchise: "",
@@ -48,7 +51,7 @@ export default function CreateProcedure() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      router.push("/dashboard/procedures");
+      router.push(createTenantLink(tenant, "/dashboard/procedures"));
     }, 1500);
   };
 
@@ -59,7 +62,7 @@ export default function CreateProcedure() {
         {/* Header */}
         <div>
           <button
-            onClick={() => router.push("/dashboard/procedures")}
+            onClick={() => router.push(createTenantLink(tenant, "/dashboard/procedures"))}
             className="flex items-center gap-2 text-primary hover:text-primary/90 font-medium mb-4 text-sm"
           >
             <ArrowLeft className="w-4 h-4" />

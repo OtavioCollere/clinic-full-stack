@@ -10,6 +10,8 @@ import { validateCPF } from "@/utils/validate-cpf";
 import { registerUser } from "@/services/auth/auth.service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -21,6 +23,7 @@ export default function Register() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const tenant = useTenant();
   
   // CPF validation state - tracks if field was touched and validation status
   const [cpfTouched, setCpfTouched] = useState(false);
@@ -88,7 +91,7 @@ export default function Register() {
         toast.success(response.message);
       }
 
-      router.push("/dashboard");
+      router.push(createTenantLink(tenant, "/dashboard"));
 
       setIsLoading(false);
     } catch (error: any) {
@@ -267,7 +270,7 @@ export default function Register() {
         </div>
 
         {/* Login Link */}
-        <Link href="/auth/login">
+        <Link href={createTenantLink(tenant, "/auth/login")}>
           <Button
             variant="outline"
             className="w-full h-14 text-lg border-border text-foreground hover:bg-secondary"

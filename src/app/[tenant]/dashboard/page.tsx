@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
 import {
   Calendar,
   Users,
@@ -72,6 +74,7 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
+  const tenant = useTenant();
 
   return (
     <div className="space-y-8">
@@ -120,7 +123,7 @@ export default function DashboardPage() {
           <h2 className="text-xl font-bold text-foreground mb-4">Ações Rápidas</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {quickActions.map((action, index) => (
-              <Link key={index} href={action.path}>
+              <Link key={index} href={createTenantLink(tenant, action.path)}>
                 <div className="bg-white rounded-xl border border-border p-6 hover:shadow-lg hover:border-primary transition-all cursor-pointer group">
                   <div className="flex items-start justify-between mb-4">
                     <div className="p-2.5 bg-blue-50 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors">
@@ -140,7 +143,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-foreground">Consultas Recentes</h2>
-            <Link href="/dashboard/appointments">
+            <Link href={createTenantLink(tenant, "/dashboard/appointments")}>
               <Button variant="ghost" className="text-primary">
                 Ver Todas <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

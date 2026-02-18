@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Calendar, List, Plus } from "lucide-react";
 import CreateAppointmentModal from "../_components/create-appointment-modal";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
 
 interface Appointment {
   id: string;
@@ -52,6 +54,7 @@ const mockAppointments: Appointment[] = [
 
 export default function AppointmentsPage() {
   const router = useRouter();
+  const tenant = useTenant();
   const [appointments] = useState<Appointment[]>(mockAppointments);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -182,7 +185,7 @@ export default function AppointmentsPage() {
                       <button
                         onClick={() =>
                           router.push(
-                            `/dashboard/appointments/${appointment.id}`
+                            createTenantLink(tenant, `/dashboard/appointments/${appointment.id}`)
                           )
                         }
                         className="w-full py-2 text-sm font-medium text-primary hover:bg-blue-50 rounded transition-colors"

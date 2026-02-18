@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stethoscope, Plus, Edit2, Trash2, ArrowRight } from "lucide-react";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
 
 interface Franchise {
   id: string;
@@ -17,6 +19,7 @@ interface Franchise {
 
 export default function CreateFranchise() {
   const router = useRouter();
+  const tenant = useTenant();
   const [franchises, setFranchises] = useState<Franchise[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -160,7 +163,7 @@ export default function CreateFranchise() {
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push("/dashboard");
+      router.push(createTenantLink(tenant, "/dashboard"));
     }, 1500);
   };
 
