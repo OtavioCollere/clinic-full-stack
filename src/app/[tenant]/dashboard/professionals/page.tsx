@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../_components/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -13,68 +13,68 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Plus, Edit2, Lock } from "lucide-react";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
+import { getProfessionals } from "@/services/professional/professional.service";
+import { useAuthContext } from "@/context/AuthContext";
+import { getFranchises } from "@/services/franchise/franchise.service";
 
 interface Professional {
   id: string;
-  name: string;
+  franchiseId: string;
+  userId: string;
+  name: string | null;
+  council?: string | null;
+  councilNumber?: string | null;
+  councilState?: string | null;
   profession: string;
-  council: string;
-  councilNumber: string;
-  franchise: string;
-  status: "active" | "disabled";
+  createdAt: string;
+  updatedAt?: string | null;
+  // Campos opcionais que podem vir da API ou serem mapeados
+  franchise?: string;
+  status?: "active" | "disabled";
 }
 
-const mockProfessionals: Professional[] = [
-  {
-    id: "1",
-    name: "Dr. John Smith",
-    profession: "Dentist",
-    council: "CRO",
-    councilNumber: "12345",
-    franchise: "Downtown Unit",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Dr. Maria Garcia",
-    profession: "Physician",
-    council: "CRM",
-    councilNumber: "54321",
-    franchise: "Downtown Unit",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Dr. Robert Johnson",
-    profession: "Dentist",
-    council: "CRO",
-    councilNumber: "67890",
-    franchise: "Uptown Unit",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Dr. Sarah Williams",
-    profession: "Therapist",
-    council: "CREF",
-    councilNumber: "11111",
-    franchise: "Shopping Mall Unit",
-    status: "disabled",
-  },
-];
+interface Franchise {
+  id: string;
+  name: string;
+}
+
 
 export default function ProfessionalsPage() {
   const router = useRouter();
-  const [professionals, setProfessionals] = useState<Professional[]>(mockProfessionals);
+  const tenant = useTenant();
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [franchiseFilter, setFranchiseFilter] = useState("all");
   const [professionFilter, setProfessionFilter] = useState("all");
+  const [franchises, setFranchises] = useState<Franchise[]>([]);
+  const { user } = useAuthContext();
+
+  useEffect(() => {
+    if (!user?.clinicId) return;
+
+    const fetchProfessionals = async () => {
+      const response = await getProfessionals(user.clinicId as string);
+      console.log(response);
+      
+      setProfessionals(response);
+    };
+
+    const fetchFranchises = async () => {
+      const response = await getFranchises(user.clinicId as string);
+      setFranchises(response);
+    };
+
+    fetchProfessionals();
+    fetchFranchises();
+  }, [user?.clinicId]);
 
   const filteredProfessionals = professionals.filter((prof) => {
     const matchesSearch =
-      prof.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prof.councilNumber.includes(searchTerm);
-    const matchesFranchise = franchiseFilter === "all" || prof.franchise === franchiseFilter;
+      (prof.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
+      (prof.councilNumber?.includes(searchTerm) || false);
+    const matchesFranchise = franchiseFilter === "all" || prof.franchiseId === franchiseFilter;
     const matchesProfession = professionFilter === "all" || prof.profession === professionFilter;
 
     return matchesSearch && matchesFranchise && matchesProfession;
@@ -91,11 +91,16 @@ export default function ProfessionalsPage() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/dashboard/professionals/${id}/edit`);
+    router.push(createTenantLink(tenant, `/dashboard/professionals/${id}/edit`));
   };
 
-  const uniqueFranchises = Array.from(new Set(professionals.map((p) => p.franchise)));
-  const uniqueProfessions = Array.from(new Set(professionals.map((p) => p.profession)));
+  const uniqueProfessions = Array.from(new Set(professionals.map((p) => p.profession).filter(Boolean)));
+  
+  // Função helper para obter o nome da franquia pelo ID
+  const getFranchiseName = (franchiseId: string) => {
+    const franchise = franchises.find((f) => f.id === franchiseId);
+    return franchise?.name || franchiseId;
+  };
 
   return (
 
@@ -107,7 +112,7 @@ export default function ProfessionalsPage() {
             <p className="text-muted-foreground">Gerencie os profissionais da sua clínica</p>
           </div>
           <Button
-            onClick={() => router.push("/dashboard/professionals/register")}
+            onClick={() => router.push(createTenantLink(tenant, "/dashboard/professionals/register"))}
             className="bg-primary hover:bg-primary/90 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -134,9 +139,9 @@ export default function ProfessionalsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as Franquias</SelectItem>
-                {uniqueFranchises.map((franchise) => (
-                  <SelectItem key={franchise} value={franchise}>
-                    {franchise}
+                {franchises.map((franchise) => (
+                  <SelectItem key={franchise.id} value={franchise.id}>
+                    {franchise.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -169,7 +174,7 @@ export default function ProfessionalsPage() {
               Adicione seu primeiro profissional para começar
             </p>
             <Button
-              onClick={() => router.push("/dashboard/professionals/register")}
+              onClick={() => router.push(createTenantLink(tenant, "/dashboard/professionals/register"))}
               className="bg-primary hover:bg-primary/90 text-white"
             >
               Adicionar Profissional
@@ -191,10 +196,10 @@ export default function ProfessionalsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="font-semibold text-foreground text-lg mb-1">
-                        {professional.name}
+                        {professional.name || "Profissional"}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {professional.profession}
+                        {professional.profession || "N/A"}
                       </p>
                     </div>
                     {professional.status === "disabled" && (
@@ -209,13 +214,13 @@ export default function ProfessionalsPage() {
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Conselho</p>
                       <p className="text-sm font-medium text-foreground">
-                        {professional.council} • {professional.councilNumber}
+                        {professional.council || "N/A"} {professional.councilNumber && `• ${professional.councilNumber}`}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Franquia Atribuída</p>
                       <p className="text-sm font-medium text-foreground">
-                        {professional.franchise}
+                        {getFranchiseName(professional.franchiseId)}
                       </p>
                     </div>
                   </div>

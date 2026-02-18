@@ -15,12 +15,23 @@ import {
 import { ArrowLeft, User, Mail, CreditCard } from "lucide-react";
 import { validateCPF } from "@/utils/validate-cpf";
 import { useAuthContext } from "@/context/AuthContext";
+import { useTenant } from "@/hooks/use-tenant";
+import { createTenantLink } from "@/lib/tenant-navigation";
+import { getFranchises } from "@/services/franchise/franchise.service";
+import { createProfessional } from "@/services/professional/professional.service";
+import { toast } from "sonner";
+// import { getLinkedUsers } from "@/services/clinic/clinic.service";
 
 export default function RegisterProfessional() {
   const router = useRouter();
   const { user, loading: userLoading } = useAuthContext();
+  const tenant = useTenant();
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<"professional" | "colaborator">("professional");
+  const [franchises, setFranchises] = useState<any[]>([]);
+  // const [linkedUsers, setLinkedUsers] = useState<any[]>([]);
+  // const [linkedUserSearch, setLinkedUserSearch] = useState("");
+  // const [isLinkedUserDropdownOpen, setIsLinkedUserDropdownOpen] = useState(false);
   
   // CPF validation state
   const [cpfTouched, setCpfTouched] = useState(false);
@@ -36,10 +47,37 @@ export default function RegisterProfessional() {
     councilNumber: '',
     councilState: '',
     profession: '',
-    linkedUser: '',
+    // linkedUser: '',
   });
-  
-  console.log(user)
+
+  useEffect(() => {
+    if (!user?.clinicId) return;
+    
+    const clinicId = user.clinicId;
+    const fetchFranchises = async () => {
+      try {
+        const response = await getFranchises(clinicId);
+        setFranchises(response);
+      } catch (error) {
+        console.error("Erro ao buscar franchises:", error);
+        setFranchises([]);
+      }
+    };
+
+    // const fetchLinkedUsers = async () => {
+    //   try {
+    //     const response = await getLinkedUsers(clinicId);
+    //     console.log(response);
+    //     setLinkedUsers(response);
+    //   } catch (error) {
+    //     console.error("Erro ao buscar usuários vinculados:", error);
+    //     setLinkedUsers([]);
+    //   }
+    // };
+    
+    fetchFranchises();
+    // fetchLinkedUsers();
+  }, [user?.clinicId]);
 
   // CPF masking function - formats input as 000.000.000-00
   const maskCPF = (value: string): string => {
@@ -104,6 +142,23 @@ export default function RegisterProfessional() {
       
       // Debug: verificar se o valor foi setado
       console.log("Profissão selecionada:", value, "Conselho definido:", council);
+    // } else if (name === "linkedUser") {
+    //   // Quando um usuário é selecionado, preencher os campos automaticamente
+    //   const selectedUser = linkedUsers.find((u) => u.id === value);
+    //   if (selectedUser) {
+    //     setFormData((prev) => ({
+    //       ...prev,
+    //       linkedUser: value,
+    //       name: selectedUser.name || "",
+    //       cpf: selectedUser.cpf || "",
+    //       email: selectedUser.email || "",
+    //     }));
+    //     // Reset CPF validation since it's auto-filled
+    //     setCpfTouched(false);
+    //     setCpfIsValid(null);
+    //   }
+    //   setLinkedUserSearch("");
+    //   setIsLinkedUserDropdownOpen(false);
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -112,10 +167,32 @@ export default function RegisterProfessional() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // const handleLinkedUserClear = () => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     linkedUser: "",
+  //     name: "",
+  //     cpf: "",
+  //     email: "",
+  //   }));
+  //   setLinkedUserSearch("");
+  //   setCpfTouched(false);
+  //   setCpfIsValid(null);
+  // };
+
+  // // Filter linked users based on search
+  // const filteredLinkedUsers = linkedUsers.filter((user) =>
+  //   user.name?.toLowerCase().includes(linkedUserSearch.toLowerCase()) ||
+  //   user.email?.toLowerCase().includes(linkedUserSearch.toLowerCase())
+  // );
+
+  // // Get selected linked user for display
+  // const selectedLinkedUser = linkedUsers.find((u) => u.id === formData.linkedUser);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate CPF before submission
+    // Validar CPF antes de submeter
     const cpfValid = validateCPF(formData.cpf);
     if (!cpfValid) {
       setCpfTouched(true);
@@ -124,23 +201,50 @@ export default function RegisterProfessional() {
     }
     
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    if (!user) return;
+
+    try{
+      const response = await createProfessional({
+        franchiseId: formData.franchiseId,
+        name: formData.name,
+        cpf: formData.cpf,
+        email: formData.email,
+        ownerId: user.id,
+        council: formData.council,
+        councilNumber: formData.councilNumber,
+        councilState: formData.councilState,
+        profession: formData.profession,
+      });
+
+      console.log(response);
+
+      toast.success("Profissional criado com sucesso!");
+      router.push(createTenantLink(tenant, "/dashboard/professionals"));
+
+    } catch (error: any) {
+      console.error("Erro ao criar profissional:", error);
+      
+      // Extrai a mensagem de erro do backend
+      // NestJS retorna erros no formato: { statusCode, message, error }
+      const errorMessage = error?.response?.data?.message 
+        || error?.message 
+        || "Erro ao criar profissional. Tente novamente.";
+      
+      toast.error(errorMessage);
+    } finally{
       setIsLoading(false);
-      router.push("/dashboard/professionals");
-    }, 1500);
+    }
   };
 
-  const isFormValid = userType === "professional" 
-    ? formData.name && formData.cpf && formData.email && formData.profession && formData.franchiseId && cpfIsValid === true
-    : formData.name && formData.cpf && formData.email && formData.profession && formData.franchiseId && cpfIsValid === true;
+  // Validação do formulário
+  const isFormValid = formData.name && formData.cpf && formData.email && formData.profession && formData.franchiseId && cpfIsValid === true;
 
   return (
     <div className="space-y-8">
         {/* Header */}
         <div>
           <button
-            onClick={() => router.push("/dashboard/professionals")}
+            onClick={() => router.push(createTenantLink(tenant, "/dashboard/professionals"))}
             className="flex items-center gap-2 text-primary hover:text-primary/90 font-medium mb-4 text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -334,31 +438,83 @@ export default function RegisterProfessional() {
                   <SelectValue placeholder="Selecione a franquia" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="downtown">Downtown Unit</SelectItem>
-                  <SelectItem value="uptown">Uptown Unit</SelectItem>
-                  <SelectItem value="mall">Shopping Mall Unit</SelectItem>
+                  {
+                    franchises.map((franchise) => (
+                      <SelectItem key={franchise.id} value={franchise.id}>{franchise.name}</SelectItem>
+                    ))
+                  }
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Linked User */}
+            {/* Linked User - Searchable */}
+            {/* 
             <div className="space-y-2">
               <Label htmlFor="linkedUser" className="text-foreground font-semibold">
                 Usuário Vinculado (Selecione um usuário existente)
               </Label>
-              <Select value={formData.linkedUser} onValueChange={(value) =>
-                handleSelectChange("linkedUser", value)
-              }>
-                <SelectTrigger id="linkedUser" className="bg-white border-border h-11">
-                  <SelectValue placeholder="Selecione o usuário" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user1">Dr. John Smith (john@clinic.com)</SelectItem>
-                  <SelectItem value="user2">Dr. Maria Garcia (maria@clinic.com)</SelectItem>
-                  <SelectItem value="user3">Sarah Johnson (sarah@clinic.com)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Pesquisar usuário por nome ou e-mail..."
+                    value={linkedUserSearch || selectedLinkedUser?.name || ""}
+                    onChange={(e) => {
+                      setLinkedUserSearch(e.target.value);
+                      setIsLinkedUserDropdownOpen(true);
+                      if (!e.target.value && formData.linkedUser) {
+                        handleLinkedUserClear();
+                      }
+                    }}
+                    onFocus={() => setIsLinkedUserDropdownOpen(true)}
+                    className="pl-10 pr-10 h-11 bg-white border-border"
+                  />
+                  {formData.linkedUser && (
+                    <button
+                      type="button"
+                      onClick={handleLinkedUserClear}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                
+                {isLinkedUserDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsLinkedUserDropdownOpen(false)}
+                    />
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {filteredLinkedUsers.length > 0 ? (
+                        filteredLinkedUsers.map((user) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => handleSelectChange("linkedUser", user.id)}
+                            className="w-full px-4 py-3 text-left hover:bg-secondary transition-colors border-b border-border last:border-b-0"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium text-sm">{user.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {user.email}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+                          Nenhum usuário encontrado
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
+            */}
 
             {/* Submit Button */}
             <Button
