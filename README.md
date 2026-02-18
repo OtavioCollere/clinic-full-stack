@@ -4,6 +4,59 @@ Frontend da plataforma **SaaS multi-tenant** para gestão de clínicas, desenvol
 
 Interface responsiva que consome a API REST do backend NestJS, implementando autenticação baseada em cookies httpOnly, refresh token automático, multi-tenancy por slug na URL e gerenciamento de estado global via Context API.
 
+## 📸 Preview
+
+### Autenticação
+<div align="center">
+  <img src="imgs/create-account.png" alt="Criação de Conta" width="800"/>
+  <p><em>Tela de criação de conta</em></p>
+</div>
+
+### Dashboard
+<div align="center">
+  <img src="imgs/dashboard.png" alt="Dashboard" width="800"/>
+  <p><em>Painel administrativo principal</em></p>
+</div>
+
+### Gestão de Pacientes
+<div align="center">
+  <img src="imgs/patients.png" alt="Listagem de Pacientes" width="800"/>
+  <p><em>Listagem e gestão de pacientes</em></p>
+</div>
+
+<div align="center">
+  <img src="imgs/add_patient.png" alt="Cadastro de Paciente" width="800"/>
+  <p><em>Formulário de cadastro de paciente</em></p>
+</div>
+
+### Gestão de Profissionais
+<div align="center">
+  <img src="imgs/professional_01.png" alt="Listagem de Profissionais" width="800"/>
+  <p><em>Listagem de profissionais</em></p>
+</div>
+
+<div align="center">
+  <img src="imgs/professional_02.png" alt="Cadastro de Profissional" width="800"/>
+  <p><em>Formulário de cadastro de profissional</em></p>
+</div>
+
+### Anamnese
+<div align="center">
+  <img src="imgs/anamnese_01.png" alt="Formulário de Anamnese - Parte 1" width="800"/>
+  <p><em>Formulário de anamnese - Histórico estético e condições de saúde</em></p>
+</div>
+
+<div align="center">
+  <img src="imgs/anamnese_02.png" alt="Formulário de Anamnese - Parte 2" width="800"/>
+  <p><em>Formulário de anamnese - Histórico médico e avaliação física</em></p>
+</div>
+
+### Agendamentos
+<div align="center">
+  <img src="imgs/appointments.png" alt="Agendamentos" width="800"/>
+  <p><em>Gestão de agendamentos</em></p>
+</div>
+
 ---
 
 ## Principais Responsabilidades
