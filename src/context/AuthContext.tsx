@@ -4,12 +4,15 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { fetchMe, logoutUser } from "@/services/auth/auth.service";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { extractTenantFromPath, addTenantToPath } from "@/lib/tenant";
 
 interface User {
   id: string;
   name: string;
   email: string;
   cpf?: string;
+  clinicId?: string;
+  clinicMembershipId?: string;
 }
 
 interface AuthContextType {
@@ -36,15 +39,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Busca dados do usuário usando o cookie (enviado automaticamente com withCredentials: true)
-      const userData = await fetchMe();
+      const response = await fetchMe();
       
-      // Os dados vêm diretamente, não dentro de .user
-      if (userData?.id) {
+      // O backend retorna: { user: {...}, clinicId: "...", clinicMembershipId: "..." }
+      if (response?.user?.id) {
         setUser({
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          cpf: userData.cpf,
+          id: response.user.id,
+          name: response.user.name,
+          email: response.user.email,
+          cpf: response.user.cpf,
+          clinicId: response.clinicId,
+          clinicMembershipId: response.clinicMembershipId,
         });
       } else {
         setUser(null);
@@ -72,9 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       toast.error(error?.response?.data?.message || "Erro ao fazer logout");
     } finally {
-      console.log("🚀 Redirecionando para /auth/login...");
+      console.log("🚀 Redirecionando para login...");
       // Sempre redireciona, mesmo se der erro
-      window.location.href = "/auth/login";
+      // Extrai o tenant do pathname atual
+      const tenant = extractTenantFromPath(window.location.pathname);
+      const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
+      window.location.href = loginPath;
     }
   };
 
