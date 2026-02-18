@@ -25,3 +25,7 @@ export function useTenantNavigation(tenant: string | null) {
   return (path: string) => createTenantLink(tenant, path);
 }
 
+
+
+
+
