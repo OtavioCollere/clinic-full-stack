@@ -39,9 +39,7 @@ api.interceptors.response.use(
         await api.post("/refresh");
         return api(originalRequest); // 🔥 reexecuta a request original
       } catch (refreshError) {
-        // Só redireciona se não estiver já na página de login
         if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/login")) {
-          // Extrai o tenant do pathname atual
           const tenant = extractTenantFromPath(window.location.pathname);
           const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
           window.location.href = loginPath;
