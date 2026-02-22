@@ -20,12 +20,14 @@ import { createTenantLink } from "@/lib/tenant-navigation";
 import { getFranchises } from "@/services/franchise/franchise.service";
 import { createProfessional } from "@/services/professional/professional.service";
 import { toast } from "sonner";
+import { ProfessionalsPolicy } from "@/lib/professionals-policy";
 // import { getLinkedUsers } from "@/services/clinic/clinic.service";
 
 export default function RegisterProfessional() {
   const router = useRouter();
   const { user, loading: userLoading } = useAuthContext();
   const tenant = useTenant();
+  const canCreate = ProfessionalsPolicy.canCreate(user);
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<"professional" | "colaborator">("professional");
   const [franchises, setFranchises] = useState<any[]>([]);
@@ -51,8 +53,15 @@ export default function RegisterProfessional() {
   });
 
   useEffect(() => {
+    if (userLoading) return;
+    if (user && !canCreate) {
+      router.replace(createTenantLink(tenant, "/403"));
+      return;
+    }
+  }, [userLoading, user, canCreate, tenant, router]);
+
+  useEffect(() => {
     if (!user?.clinicId) return;
-    
     const clinicId = user.clinicId;
     const fetchFranchises = async () => {
       try {
@@ -238,6 +247,21 @@ export default function RegisterProfessional() {
 
   // Validação do formulário
   const isFormValid = formData.name && formData.cpf && formData.email && formData.profession && formData.franchiseId && cpfIsValid === true;
+
+  if (userLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+  if (user && !canCreate) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="text-muted-foreground">Redirecionando...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

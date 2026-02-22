@@ -12,3 +12,8 @@ export async function getProfessionals(clinicId: string) {
   const response = await api.get(`clinics/${clinicId}/professionals`);
   return response.data;
 }
+
+export async function getProfessionalsByFranchiseId(franchiseId: string) {
+  const response = await api.get(`franchises/${franchiseId}/professionals`);
+  return response.data;
+}

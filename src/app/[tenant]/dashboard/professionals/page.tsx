@@ -18,6 +18,7 @@ import { createTenantLink } from "@/lib/tenant-navigation";
 import { getProfessionals } from "@/services/professional/professional.service";
 import { useAuthContext } from "@/context/AuthContext";
 import { getFranchises } from "@/services/franchise/franchise.service";
+import { ProfessionalsPolicy } from "@/lib/professionals-policy";
 
 interface Professional {
   id: string;
@@ -95,8 +96,8 @@ export default function ProfessionalsPage() {
   };
 
   const uniqueProfessions = Array.from(new Set(professionals.map((p) => p.profession).filter(Boolean)));
-  
-  // Função helper para obter o nome da franquia pelo ID
+  const canCreateProfessional = ProfessionalsPolicy.canCreate(user);
+
   const getFranchiseName = (franchiseId: string) => {
     const franchise = franchises.find((f) => f.id === franchiseId);
     return franchise?.name || franchiseId;
@@ -111,13 +112,15 @@ export default function ProfessionalsPage() {
             <h1 className="text-3xl font-bold text-foreground mb-2">Profissionais</h1>
             <p className="text-muted-foreground">Gerencie os profissionais da sua clínica</p>
           </div>
-          <Button
-            onClick={() => router.push(createTenantLink(tenant, "/dashboard/professionals/register"))}
-            className="bg-primary hover:bg-primary/90 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar Profissional
-          </Button>
+          {canCreateProfessional && (
+            <Button
+              onClick={() => router.push(createTenantLink(tenant, "/dashboard/professionals/register"))}
+              className="bg-primary hover:bg-primary/90 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Profissional
+            </Button>
+          )}
         </div>
 
         {/* Search and Filters */}
@@ -173,12 +176,14 @@ export default function ProfessionalsPage() {
             <p className="text-sm text-muted-foreground mb-6">
               Adicione seu primeiro profissional para começar
             </p>
-            <Button
-              onClick={() => router.push(createTenantLink(tenant, "/dashboard/professionals/register"))}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
-              Adicionar Profissional
-            </Button>
+            {canCreateProfessional && (
+              <Button
+                onClick={() => router.push(createTenantLink(tenant, "/dashboard/professionals/register"))}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                Adicionar Profissional
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
