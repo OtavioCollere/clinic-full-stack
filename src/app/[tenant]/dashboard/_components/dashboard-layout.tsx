@@ -12,13 +12,14 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
-  Pill,
+  Syringe,
   UserCheck,
   BarChart3,
   Settings,
   Bell,
   LogOut,
   ChevronDown,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,19 +35,22 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
   const { user, logout } = useAuthContext();
   const tenant = useTenant();
 
+  
+
   const menuItems = [
     { icon: LayoutDashboard, label: "Painel", path: "/dashboard" },
     { icon: Calendar, label: "Consultas", path: "/dashboard/appointments" },
     { icon: Users, label: "Pacientes", path: "/dashboard/patients" },
     { icon: UserCheck, label: "Profissionais", path: "/dashboard/professionals" },
-    { icon: Pill, label: "Procedimentos", path: "/dashboard/procedures" },
-    { icon: Pill, label: "Faturamento", path: "/dashboard/billing" },
+    { icon: Syringe, label: "Procedimentos", path: "/dashboard/procedures" },
+    { icon: Receipt, label: "Faturamento", path: "/dashboard/billing" },
   ];
 
   return (
@@ -80,7 +84,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const tenantPath = createTenantLink(tenant, item.path);
-            const isActive = pathname === item.path || pathname === tenantPath;
+            const pathNorm = (p: string) => p.replace(/\/$/, "") || "/";
+            const base = pathNorm(tenantPath);
+            const current = pathNorm(pathname);
+            const isDashboardRoot = pathNorm(item.path) === "/dashboard";
+            // Painel: nunca marcado como selecionado; outros: ativo em match exato
+            const isActive = isDashboardRoot ? false : current === base || current === base + "/";
             return (
               <Link key={item.path} href={tenantPath}>
                 <button
