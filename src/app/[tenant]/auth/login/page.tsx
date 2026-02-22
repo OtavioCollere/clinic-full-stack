@@ -34,13 +34,15 @@ export default function Login() {
       
       if(response.status === 200){
         toast.success(response.data.message);
-        
+
         // Aguarda um pouco para garantir que o cookie foi salvo
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Redireciona mantendo o tenant na URL se houver
-        const dashboardPath = createTenantLink(tenant, "/dashboard");
-        window.location.href = dashboardPath;
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Redireciona para o portal correto conforme a role retornada pelo backend
+        const role = (response.data?.clinicRole?.value ?? response.data?.clinicRole) as ClinicRoleType | undefined;
+        const portalBase = role ? getPortalBaseForRole(role) : "/dashboard";
+        const redirectPath = createTenantLink(tenant, portalBase);
+        router.push(redirectPath);
       }
 
     } catch (error: any) {
@@ -57,8 +59,8 @@ export default function Login() {
         {/* Logo & Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-blue-600">
-              <Stethoscope className="w-8 h-8 text-white" />
+            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-primary">
+              <Stethoscope className="w-8 h-8 text-primary-foreground" />
             </div>
             <span className="text-4xl font-bold text-foreground">Cliniker</span>
           </div>

@@ -111,8 +111,8 @@ export default function Register() {
         {/* Logo & Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-blue-600">
-              <Stethoscope className="w-8 h-8 text-white" />
+            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-primary">
+              <Stethoscope className="w-8 h-8 text-primary-foreground" />
             </div>
             <span className="text-4xl font-bold text-foreground">Cliniker</span>
           </div>
