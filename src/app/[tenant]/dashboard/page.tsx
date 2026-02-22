@@ -13,6 +13,7 @@ import {
   ArrowRight,
   TrendingUp,
 } from "lucide-react";
+import { useAuthContext } from "@/context/AuthContext";
 interface StatCard {
   icon: React.ReactNode;
   label: string;
@@ -75,6 +76,9 @@ const quickActions = [
 
 export default function DashboardPage() {
   const tenant = useTenant();
+  const { user } = useAuthContext();
+
+  console.log(user);
 
   return (
     <div className="space-y-8">
