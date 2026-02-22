@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../../_components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -16,17 +17,40 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { createTenantLink } from "@/lib/tenant-navigation";
+import { useAuthContext } from "@/context/AuthContext";
+import { getFranchises } from "@/services/franchise/franchise.service";
+import { createProcedure } from "@/services/procedures/procedure.service";
+import { toast } from "sonner";
 
 export default function CreateProcedure() {
   const router = useRouter();
+  const { user } = useAuthContext();
   const tenant = useTenant();
   const [isLoading, setIsLoading] = useState(false);
+  const [franchises, setFranchises] = useState<any[]>([]);
+  const [createForAll, setCreateForAll] = useState(false);
   const [formData, setFormData] = useState({
     franchise: "",
     procedureName: "",
     price: "",
     notes: "",
   });
+
+  useEffect(() => {
+    if (!user?.clinicId) return;
+    
+    const fetchFranchises = async () => {
+      try {
+        const response = await getFranchises(user.clinicId as string);
+        setFranchises(response);
+      } catch (error) {
+        console.error("Erro ao buscar franchises:", error);
+        setFranchises([]);
+      }
+    };
+    
+    fetchFranchises();
+  }, [user?.clinicId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -45,17 +69,38 @@ export default function CreateProcedure() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      const response = await createProcedure({
+        franchiseId: createForAll ? "" : formData.franchise,
+        name: formData.procedureName,
+        price: parseFloat(formData.price),
+        notes: formData.notes,
+        createForAllFranchises: createForAll,
+        clinicId: user?.clinicId as string,
+      });
+
+      toast.success(
+        createForAll 
+          ? `Procedimento criado para todas as ${franchises.length} franquias!`
+          : "Procedimento criado com sucesso!"
+      );
       router.push(createTenantLink(tenant, "/dashboard/procedures"));
-    }, 1500);
+    } catch (error: any) {
+      console.error("Erro ao criar procedimento:", error);
+      const errorMessage = error?.response?.data?.message 
+        || error?.message 
+        || "Erro ao criar procedimento. Tente novamente.";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const isFormValid = formData.franchise && formData.procedureName && formData.price;
+  const isFormValid = (createForAll || formData.franchise) && formData.procedureName && formData.price;
 
   return (
       <div className="space-y-8">
@@ -75,23 +120,55 @@ export default function CreateProcedure() {
         {/* Form Card */}
         <div className="bg-white rounded-xl border border-border p-8 shadow-sm max-w-2xl">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Create for all franchises checkbox */}
+            <div className="flex items-center space-x-2 p-4 bg-secondary rounded-lg">
+              <Checkbox
+                id="createForAll"
+                checked={createForAll}
+                onCheckedChange={(checked) => {
+                  setCreateForAll(checked as boolean);
+                  if (checked) {
+                    setFormData((prev) => ({ ...prev, franchise: "" }));
+                  }
+                }}
+              />
+              <Label
+                htmlFor="createForAll"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Criar para todas as franquias
+              </Label>
+            </div>
+
             {/* Franchise */}
             <div className="space-y-2">
               <Label htmlFor="franchise" className="text-foreground font-semibold">
-                Franquia *
+                Franquia {!createForAll && "*"}
               </Label>
-              <Select value={formData.franchise} onValueChange={(value) =>
-                handleSelectChange("franchise", value)
-              }>
-                <SelectTrigger id="franchise" className="bg-white border-border h-11">
+              <Select 
+                value={formData.franchise} 
+                onValueChange={(value) => handleSelectChange("franchise", value)}
+                disabled={createForAll}
+              >
+                <SelectTrigger 
+                  id="franchise" 
+                  className={`bg-white border-border h-11 ${createForAll ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
                   <SelectValue placeholder="Selecione uma franquia" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="downtown">Downtown Unit</SelectItem>
-                  <SelectItem value="uptown">Uptown Unit</SelectItem>
-                  <SelectItem value="mall">Shopping Mall Unit</SelectItem>
+                  {franchises.map((franchise) => (
+                    <SelectItem key={franchise.id} value={franchise.id}>
+                      {franchise.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {createForAll && (
+                <p className="text-xs text-muted-foreground">
+                  O procedimento será criado para todas as {franchises.length} franquias
+                </p>
+              )}
             </div>
 
             {/* Procedure Name */}
@@ -149,6 +226,7 @@ export default function CreateProcedure() {
 
             {/* Submit Button */}
             <Button
+              onClick={handleSubmit}
               type="submit"
               disabled={isLoading || !isFormValid}
               className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium disabled:opacity-50"

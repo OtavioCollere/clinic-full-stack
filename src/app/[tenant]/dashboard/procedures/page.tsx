@@ -1,63 +1,51 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../_components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
+import { useAuthContext } from "@/context/AuthContext";
 import { createTenantLink } from "@/lib/tenant-navigation";
+import { getProceduresByClinicId } from "@/services/procedures/procedure.service";
+import { toast } from "sonner";
 
 interface Procedure {
   id: string;
   name: string;
   price: number;
-  notes: string;
+  notes?: string | null;
+  franchiseId: string;
+  status: string;
 }
-
-const mockProcedures: Procedure[] = [
-  {
-    id: "1",
-    name: "Teeth Cleaning",
-    price: 75.0,
-    notes: "Professional dental cleaning and plaque removal",
-  },
-  {
-    id: "2",
-    name: "Filling",
-    price: 150.0,
-    notes: "Composite resin filling for cavities",
-  },
-  {
-    id: "3",
-    name: "Root Canal",
-    price: 400.0,
-    notes: "Endodontic treatment for infected teeth",
-  },
-  {
-    id: "4",
-    name: "Teeth Whitening",
-    price: 200.0,
-    notes: "Professional teeth whitening treatment",
-  },
-  {
-    id: "5",
-    name: "Extraction",
-    price: 250.0,
-    notes: "Tooth extraction and post-care",
-  },
-  {
-    id: "6",
-    name: "Crown Placement",
-    price: 600.0,
-    notes: "Dental crown installation",
-  },
-];
 
 export default function ProceduresPage() {
   const router = useRouter();
+  const { user } = useAuthContext();
   const tenant = useTenant();
-  const [procedures] = useState<Procedure[]>(mockProcedures);
+  const [procedures, setProcedures] = useState<Procedure[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.clinicId) return;
+
+    const fetchProcedures = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getProceduresByClinicId(user.clinicId as string);
+        setProcedures(Array.isArray(response) ? response : []);
+      } catch (error) {
+        console.error("Erro ao buscar procedimentos:", error);
+        setProcedures([]);
+        toast.error("Erro ao carregar procedimentos");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProcedures();
+  }, [user?.clinicId]);
 
   const handleDelete = (id: string) => {
     // TODO: Implement delete functionality
@@ -65,7 +53,7 @@ export default function ProceduresPage() {
   };
 
   const handleEdit = (id: string) => {
-    // TODO: Implement edit functionality
+    if (!id) return;
     router.push(createTenantLink(tenant, `/dashboard/procedures/${id}/edit`));
   };
 
@@ -86,9 +74,17 @@ export default function ProceduresPage() {
           </Button>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Carregando procedimentos...</p>
+          </div>
+        )}
+
         {/* Procedures Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {procedures.map((procedure) => (
+        {!isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {procedures.map((procedure) => (
             <div
               key={procedure.id}
               className="bg-white rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-shadow"
@@ -104,20 +100,30 @@ export default function ProceduresPage() {
 
               <div className="mb-6">
                 <p className="text-2xl font-bold text-primary">
-                  ${procedure.price.toFixed(2)}
+                  R$ {typeof procedure.price === 'number' ? procedure.price.toFixed(2) : parseFloat(procedure.price as string).toFixed(2)}
                 </p>
               </div>
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleEdit(procedure.id)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleEdit(procedure.id);
+                  }}
                   className="flex-1 px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Editar</span>
                 </button>
                 <button
-                  onClick={() => handleDelete(procedure.id)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDelete(procedure.id);
+                  }}
                   className="flex-1 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -126,10 +132,11 @@ export default function ProceduresPage() {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Empty State */}
-        {procedures.length === 0 && (
+        {!isLoading && procedures.length === 0 && (
           <div className="bg-white rounded-xl border border-dashed border-border p-12 text-center">
             <div className="text-muted-foreground mb-3 opacity-50">
               <Trash2 className="w-12 h-12 mx-auto" />
