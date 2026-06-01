@@ -1,7 +1,10 @@
 import type { Appointment } from "@/services/appointments/appointment.service";
 
+const BRAZIL_TZ = "America/Sao_Paulo";
+
 export type AppointmentDisplay = {
   id: string;
+  professionalId: string;
   patientName: string;
   professionalName: string;
   appointmentName: string;
@@ -14,8 +17,9 @@ export type AppointmentDisplay = {
 
 export function formatAppointmentForDisplay(apt: Appointment): AppointmentDisplay {
   const startDate = new Date(apt.startAt);
-  const date = startDate.toISOString().split("T")[0];
+  const date = startDate.toLocaleDateString("en-CA", { timeZone: BRAZIL_TZ });
   const time = startDate.toLocaleTimeString("pt-BR", {
+    timeZone: BRAZIL_TZ,
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -25,6 +29,7 @@ export function formatAppointmentForDisplay(apt: Appointment): AppointmentDispla
     hours > 0 && minutes > 0 ? `${hours}h${minutes}m` : hours > 0 ? `${hours}h` : `${minutes}min`;
   return {
     id: apt.id,
+    professionalId: apt.professionalId,
     patientName: apt.patientName || "Paciente não encontrado",
     professionalName: apt.professionalName || "Profissional não encontrado",
     appointmentName: apt.name,
@@ -39,15 +44,15 @@ export function formatAppointmentForDisplay(apt: Appointment): AppointmentDispla
 export function getStatusColor(status: string): string {
   switch (status) {
     case "CONFIRMED":
-      return "bg-green-100 text-green-700";
+      return "bg-emerald-500/15 text-emerald-400";
     case "WAITING":
-      return "bg-yellow-100 text-yellow-700";
+      return "bg-amber-500/15 text-amber-400";
     case "CANCELED":
-      return "bg-red-100 text-red-700";
+      return "bg-red-500/15 text-red-400";
     case "DONE":
-      return "bg-blue-100 text-blue-700";
+      return "bg-primary/15 text-primary";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-border text-muted-foreground";
   }
 }
 
@@ -99,10 +104,30 @@ export function getStatusAccentBg(status: string): string {
 }
 
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("pt-BR", {
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR", {
+    timeZone: BRAZIL_TZ,
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+}
+
+/** Data em formato curto BR (dd/MM/yyyy) para uso em cards. */
+export function formatDateShort(dateStr: string): string {
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR", {
+    timeZone: BRAZIL_TZ,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+/** Data compacta para card: "ter., 28 abr." */
+export function formatDateCard(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const weekday = d.toLocaleDateString("pt-BR", { timeZone: BRAZIL_TZ, weekday: "short" });
+  const day = d.toLocaleDateString("pt-BR", { timeZone: BRAZIL_TZ, day: "numeric" });
+  const month = d.toLocaleDateString("pt-BR", { timeZone: BRAZIL_TZ, month: "short" });
+  return `${weekday} ${day} ${month}`;
 }

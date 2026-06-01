@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -15,15 +15,14 @@ import {
   Building2,
   Calendar,
   Clock,
-  CreditCard,
-  Hash,
   FileText,
-  Pencil,
   Ban,
   Check,
+  Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAppointmentById, type Appointment as AppointmentType } from "@/services/appointments/appointment.service";
+import { getStatusAccentBg, getStatusColor, getStatusLabel } from "@/components/appointments/appointment-utils";
 import { getFranchises } from "@/services/franchise/franchise.service";
 import { getProceduresByClinicId } from "@/services/procedures/procedure.service";
 import { useAuthContext } from "@/context/AuthContext";
@@ -45,8 +44,9 @@ interface ViewAppointmentDetailsModalProps {
   onClose: () => void;
   appointmentId: string;
   onEdit?: (appointmentId: string) => void;
-  onConfirm?: (appointmentId: string) => void;
+  onConfirm?: (appointmentId: string) => Promise<void> | void;
   onCancel?: (appointmentId: string) => void;
+  onCreateServiceOrder?: (appointment: AppointmentType) => void;
 }
 
 
@@ -54,9 +54,9 @@ export default function ViewAppointmentDetailsModal({
   isOpen,
   onClose,
   appointmentId,
-  onEdit,
   onConfirm,
   onCancel,
+  onCreateServiceOrder,
 }: ViewAppointmentDetailsModalProps) {
   const { user } = useAuthContext();
   const [isLoadingAppointment, setIsLoadingAppointment] = useState(true);
@@ -122,12 +122,16 @@ export default function ViewAppointmentDetailsModal({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("pt-BR");
+    return date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const formatDuration = (minutes: number) => {
@@ -140,31 +144,27 @@ export default function ViewAppointmentDetailsModal({
 
   const getDayOfWeek = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("pt-BR", { weekday: "long" });
+    return date.toLocaleDateString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      weekday: "long",
+    });
   };
 
   const isReturnConsultation =
     appointment?.appointmentItems.every((item) => Number(item.price || 0) === 0);
 
   const totalValue = appointment?.appointmentItems.reduce(
-    (sum, item) => sum + item.price,
+    (sum, item) => sum + Number(item.price || 0),
     0
   ) || 0;
-
-  const handleEdit = () => {
-    if (onEdit) {
-      onEdit(appointmentId);
-      onClose();
-    }
-  };
 
   const handleConfirm = async () => {
     if (onConfirm) {
       try {
-        onConfirm(appointmentId);
+        await onConfirm(appointmentId);
         toast.success("Agendamento confirmado com sucesso!");
         onClose();
-      } catch (err) {
+      } catch {
         toast.error("Erro ao confirmar agendamento");
       }
     }
@@ -189,9 +189,9 @@ export default function ViewAppointmentDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto pb-32 p-0">
-        <div className={`h-1.5 rounded-t-lg ${statusBarBg}`} aria-hidden />
-        <div className="px-6 pt-4">
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
+        <div className={`h-1.5 rounded-t-lg flex-shrink-0 ${statusBarBg}`} aria-hidden />
+        <div className="px-6 pt-4 flex-shrink-0">
           <DialogHeader>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -211,6 +211,7 @@ export default function ViewAppointmentDetailsModal({
           </DialogHeader>
         </div>
 
+        <div className="flex-1 overflow-y-auto">
         {error ? (
           <div className="p-6 text-center text-red-600">{error}</div>
         ) : isLoadingAppointment ? (
@@ -242,7 +243,7 @@ export default function ViewAppointmentDetailsModal({
             {/* Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Patient Card */}
-              <div className="bg-white border border-border rounded-lg p-4 space-y-3">
+              <div className="bg-card border border-border rounded-lg p-4 space-y-3">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <User className="w-4 h-4" />
                   Paciente
@@ -256,7 +257,7 @@ export default function ViewAppointmentDetailsModal({
               </div>
 
               {/* Professional Card */}
-              <div className="bg-white border border-border rounded-lg p-4 space-y-3">
+              <div className="bg-card border border-border rounded-lg p-4 space-y-3">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <Stethoscope className="w-4 h-4" />
                   Profissional
@@ -270,7 +271,7 @@ export default function ViewAppointmentDetailsModal({
               </div>
 
               {/* Franchise Card */}
-              <div className="bg-white border border-border rounded-lg p-4 space-y-3">
+              <div className="bg-card border border-border rounded-lg p-4 space-y-3">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
                   Unidade
@@ -298,7 +299,7 @@ export default function ViewAppointmentDetailsModal({
               </div>
 
               {/* Schedule Card */}
-              <div className="bg-white border border-border rounded-lg p-4 space-y-3">
+              <div className="bg-card border border-border rounded-lg p-4 space-y-3">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   Horário
@@ -417,10 +418,11 @@ export default function ViewAppointmentDetailsModal({
             </div>
           </div>
         )}
+        </div>
 
-        {/* Sticky Footer Actions */}
+        {/* Footer Actions */}
         {!error && appointment && (
-          <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-white p-4 flex gap-3 max-w-3xl mx-auto rounded-b-lg">
+          <div className="flex-shrink-0 border-t border-border bg-card p-4 flex gap-3 rounded-b-lg">
             <Button
               onClick={onClose}
               variant="outline"
@@ -429,16 +431,17 @@ export default function ViewAppointmentDetailsModal({
               Voltar
             </Button>
 
-            {appointment.status === "WAITING" && onConfirm && (
-              <Button
-                onClick={handleConfirm}
-                disabled={isLoadingAppointment}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Confirmar
-              </Button>
-            )}
+            {(appointment.status === "WAITING" || appointment.status === "CONFIRMED") &&
+              onCreateServiceOrder && (
+                <Button
+                  onClick={() => onCreateServiceOrder(appointment)}
+                  disabled={isLoadingAppointment}
+                  className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                >
+                  <Receipt className="w-4 h-4 mr-2" />
+                  Criar Comanda
+                </Button>
+              )}
 
             {appointment.status !== "CANCELED" &&
               appointment.status !== "DONE" &&
@@ -453,17 +456,6 @@ export default function ViewAppointmentDetailsModal({
                   Cancelar
                 </Button>
               )}
-
-            {onEdit && (
-              <Button
-                onClick={handleEdit}
-                disabled={isLoadingAppointment}
-                className="flex-1 bg-primary hover:bg-primary/90 text-white"
-              >
-                <Pencil className="w-4 h-4 mr-2" />
-                Editar
-              </Button>
-            )}
           </div>
         )}
       </DialogContent>

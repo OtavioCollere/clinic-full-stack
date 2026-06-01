@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Stethoscope, ChevronRight, ChevronLeft, User, Mail, CreditCard, MapPin } from "lucide-react";
+import { Stethoscope, ChevronRight, ChevronLeft, User, Mail, CreditCard, MapPin, Phone } from "lucide-react";
 import MedicalForm from "../../_components/medical-form";
 import { createPatient } from "@/services/patients/patients.service";
 import { useAuthContext } from "@/context/AuthContext";
@@ -20,6 +20,7 @@ interface UserFormData {
   name: string;
   email: string;
   cpf: string;
+  phone: string;
 }
 
 interface PatientFormData {
@@ -111,6 +112,7 @@ export default function PatientRegistration() {
     name: "",
     email: "",
     cpf: "",
+    phone: "",
   });
 
   const [patientId, setPatientId] = useState<string>("");
@@ -253,6 +255,7 @@ export default function PatientRegistration() {
         name: userData.name,
         cpf: userData.cpf,
         email: userData.email,
+        phone: userData.phone || undefined,
         birthDay: new Date(patientData.birthDate),
         address: patientData.address,
         zipCode: patientData.zipCode,
@@ -657,7 +660,7 @@ export default function PatientRegistration() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
           {currentStep === 1 ? (
             // STEP 1: Patient Basic Information
             <div className="space-y-6">
@@ -677,7 +680,7 @@ export default function PatientRegistration() {
                     placeholder="e.g., João Silva"
                     value={userData.name}
                     onChange={handleUserDataChange}
-                    className={`pl-12 h-11 bg-white border-border ${
+                    className={`pl-12 h-11 bg-card border-border ${
                       errors.name ? "border-red-500 focus:ring-red-500" : ""
                     }`}
                   />
@@ -701,7 +704,7 @@ export default function PatientRegistration() {
                     placeholder="e.g., joao@email.com"
                     value={userData.email}
                     onChange={handleUserDataChange}
-                    className={`pl-12 h-11 bg-white border-border ${
+                    className={`pl-12 h-11 bg-card border-border ${
                       errors.email ? "border-red-500 focus:ring-red-500" : ""
                     }`}
                   />
@@ -726,7 +729,7 @@ export default function PatientRegistration() {
                     value={userData.cpf}
                     onChange={handleUserDataChange}
                     onBlur={handleCpfBlur}
-                    className={`pl-12 h-11 bg-white border-border ${
+                    className={`pl-12 h-11 bg-card border-border ${
                       cpfTouched
                         ? cpfIsValid === false
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -747,6 +750,28 @@ export default function PatientRegistration() {
                 )}
               </div>
 
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-foreground font-semibold">
+                  WhatsApp / Telefone
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="e.g., 11999998888"
+                    value={userData.phone}
+                    onChange={handleUserDataChange}
+                    className="pl-12 h-11 bg-card border-border"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Usado para envio de lembretes e avisos via WhatsApp. Apenas números, sem espaços.
+                </p>
+              </div>
+
               <h2 className="text-xl font-bold text-foreground pt-4 border-t border-border">
                 Dados do Paciente
               </h2>
@@ -762,7 +787,7 @@ export default function PatientRegistration() {
                 type="date"
                   value={patientData.birthDate}
                   onChange={handlePatientDataChange}
-                  className={`h-11 bg-white border-border ${
+                  className={`h-11 bg-card border-border ${
                     errors.birthDate ? "border-red-500 focus:ring-red-500" : ""
                   }`}
                 />
@@ -785,7 +810,7 @@ export default function PatientRegistration() {
                     placeholder="e.g., Rua das Flores, 123"
                     value={patientData.address}
                     onChange={handlePatientDataChange}
-                    className={`pl-12 h-11 bg-white border-border ${
+                    className={`pl-12 h-11 bg-card border-border ${
                       errors.address ? "border-red-500 focus:ring-red-500" : ""
                     }`}
                   />
@@ -809,7 +834,7 @@ export default function PatientRegistration() {
                 placeholder="e.g., 12345-678"
                     value={patientData.zipCode}
                     onChange={handlePatientDataChange}
-                    className={`pl-12 h-11 bg-white border-border ${
+                    className={`pl-12 h-11 bg-card border-border ${
                       errors.zipCode ? "border-red-500 focus:ring-red-500" : ""
                     }`}
                   />

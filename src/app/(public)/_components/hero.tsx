@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+﻿import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 export function Hero() {
@@ -10,7 +10,7 @@ export function Hero() {
             <h1 className="text-4xl font-bold lg:text-5xl font-bold max-w-2xl tracking-tight">
               Encontre os melhores profissionais em um único local
             </h1>
-            <p className="text-base md:text-lg text-gray-600">
+            <p className="text-base md:text-lg text-muted-foreground">
               Nós somos uma plataforma para profissionais da saúde com foco em agilizar seu atendimento de forma simplificada e organizada.
             </p>
 

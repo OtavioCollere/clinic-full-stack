@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
       const cookieHeader = request.headers.get("cookie") || "";
       const headers: HeadersInit = { Cookie: cookieHeader };
       if (tenant) {
@@ -66,6 +66,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(loginPath, request.url));
       }
     } catch (error) {
+      console.error("[middleware] /users/me fetch failed:", error);
       const loginPath = tenant
         ? `/${tenant}/auth/login`
         : "/auth/login";

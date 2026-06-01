@@ -1,7 +1,26 @@
+export const FACIAL_REGIONS = [
+  "Testa",
+  "Glabela",
+  "Olhos / Pés de galinha",
+  "Nariz",
+  "Lábios",
+  "Sulco nasolabial",
+  "Bochecha / Malar",
+  "Queixo",
+  "Mandíbula",
+  "Pescoço / Platisma",
+  "Décolleté",
+  "Mãos",
+  "Corpo",
+  "Outro",
+] as const;
+
+export type FacialRegion = (typeof FACIAL_REGIONS)[number];
+
 export interface PhysicalAssessment {
-  bloodPressure?: string;
-  height?: number;
-  initialWeight?: number;
+  bloodPressure: string;
+  height: number;
+  initialWeight: number;
   finalWeight?: number;
 }
 
@@ -48,28 +67,29 @@ export interface HealthConditions {
 export interface AestheticHistory {
   hadPreviousAestheticTreatment: boolean;
   botulinumToxin: boolean;
-  botulinumRegion?: string;
+  botulinumRegion?: FacialRegion;
   filler: boolean;
-  fillerRegion?: string;
+  fillerRegion?: FacialRegion;
   fillerProduct?: string;
   suspensionThreads: boolean;
-  suspensionThreadsRegion?: string;
+  suspensionThreadsRegion?: FacialRegion;
   suspensionThreadsProduct?: string;
   surgicalLift: boolean;
-  surgicalLiftRegion?: string;
+  surgicalLiftRegion?: FacialRegion;
   surgicalLiftProduct?: string;
   chemicalPeeling: boolean;
-  chemicalPeelingRegion?: string;
+  chemicalPeelingRegion?: FacialRegion;
   chemicalPeelingProduct?: string;
   laser: boolean;
-  laserRegion?: string;
+  laserRegion?: FacialRegion;
   laserProduct?: string;
   exposedToHeatOrColdWork: boolean;
 }
 
 export interface CreateAnamnesisDto {
-  physicalAssessment?: PhysicalAssessment;
+  physicalAssessment: PhysicalAssessment;
   medicalHistory?: MedicalHistory;
   healthConditions?: HealthConditions;
   aestheticHistory?: AestheticHistory;
+  patientSignature?: string;
 }

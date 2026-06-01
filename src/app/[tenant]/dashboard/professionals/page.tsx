@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -131,13 +131,13 @@ export default function ProfessionalsPage() {
               placeholder="Pesquisar por nome ou número do conselho..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white border-border h-11"
+              className="pl-10 bg-card border-border h-11"
             />
           </div>
 
           <div className="flex gap-4 flex-wrap">
             <Select value={franchiseFilter} onValueChange={setFranchiseFilter}>
-              <SelectTrigger className="bg-white border-border h-10 w-48">
+              <SelectTrigger className="bg-card border-border h-10 w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -151,7 +151,7 @@ export default function ProfessionalsPage() {
             </Select>
 
             <Select value={professionFilter} onValueChange={setProfessionFilter}>
-              <SelectTrigger className="bg-white border-border h-10 w-48">
+              <SelectTrigger className="bg-card border-border h-10 w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -168,7 +168,7 @@ export default function ProfessionalsPage() {
 
         {/* Professionals Grid */}
         {filteredProfessionals.length === 0 ? (
-          <div className="bg-white rounded-xl border border-dashed border-border p-12 text-center">
+          <div className="bg-card rounded-xl border border-dashed border-border p-12 text-center">
             <div className="text-muted-foreground mb-3 opacity-50">
               <Lock className="w-12 h-12 mx-auto" />
             </div>
@@ -190,10 +190,10 @@ export default function ProfessionalsPage() {
             {filteredProfessionals.map((professional) => (
               <div
                 key={professional.id}
-                className={`rounded-lg border shadow-sm hover:shadow-md transition-all ${
-                  professional.status === "active"
-                    ? "bg-white border-border"
-                    : "bg-gray-50 border-gray-200 opacity-75"
+                className={`rounded-lg border transition-colors ${
+                  professional.status === "disabled"
+                    ? "bg-card/50 border-border/40 opacity-60"
+                    : "bg-card border-border"
                 }`}
               >
                 <div className="p-6">
@@ -208,7 +208,7 @@ export default function ProfessionalsPage() {
                       </p>
                     </div>
                     {professional.status === "disabled" && (
-                      <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded">
+                      <span className="px-2 py-0.5 bg-red-500/15 text-red-400 text-xs font-medium rounded">
                         Desabilitado
                       </span>
                     )}
@@ -234,18 +234,18 @@ export default function ProfessionalsPage() {
                   <div className="flex gap-2 pt-4 border-t border-border">
                     <button
                       onClick={() => handleEdit(professional.id)}
-                      className="flex-1 px-3 py-2 text-sm font-medium text-primary hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md transition-colors flex items-center justify-center gap-2"
                     >
                       <Edit2 className="w-4 h-4" />
                       <span className="hidden sm:inline">Editar</span>
                     </button>
                     <button
                       onClick={() => handleDisable(professional.id)}
-                      className="flex-1 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-md transition-colors flex items-center justify-center gap-2"
                     >
                       <Lock className="w-4 h-4" />
                       <span className="hidden sm:inline">
-                        {professional.status === "active" ? "Desabilitar" : "Habilitar"}
+                        {professional.status === "disabled" ? "Habilitar" : "Desabilitar"}
                       </span>
                     </button>
                   </div>

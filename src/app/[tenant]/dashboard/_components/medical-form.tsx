@@ -1,33 +1,35 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SignaturePad } from "@/components/ui/signature-pad";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { FACIAL_REGIONS, type FacialRegion } from "@/services/patients/dtos/create-anamnesis.dto";
 
 interface MedicalFormData {
   // Aesthetic History
   hadAestheticTreatment: boolean;
   botox: boolean;
-  botoxRegion?: string;
+  botoxRegion?: FacialRegion;
   fillers: boolean;
-  fillersRegion?: string;
+  fillersRegion?: FacialRegion;
   fillersProduct?: string;
   threads: boolean;
-  threadsRegion?: string;
+  threadsRegion?: FacialRegion;
   threadsProduct?: string;
   surgicalLift: boolean;
-  surgicalLiftRegion?: string;
+  surgicalLiftRegion?: FacialRegion;
   surgicalLiftProduct?: string;
   chemicalPeel: boolean;
-  chemicalPeelRegion?: string;
+  chemicalPeelRegion?: FacialRegion;
   chemicalPeelProduct?: string;
   laser: boolean;
-  laserRegion?: string;
+  laserRegion?: FacialRegion;
   laserProduct?: string;
   exposedToHeatCold: boolean;
 
@@ -73,6 +75,9 @@ interface MedicalFormData {
   height?: number;
   initialWeight?: number;
   finalWeight?: number;
+
+  // Signature
+  patientSignature?: string;
 }
 
 interface MedicalFormProps {
@@ -142,8 +147,16 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
     }));
   };
 
+  const [physicalError, setPhysicalError] = useState<string | null>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.bloodPressure || !formData.height || !formData.initialWeight) {
+      setPhysicalError("Pressão arterial, altura e peso inicial são obrigatórios.");
+      document.getElementById("physical-assessment-section")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    setPhysicalError(null);
     onSubmit(formData);
   };
 
@@ -186,6 +199,25 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
     </div>
   );
 
+  const RegionSelect = ({
+    value,
+    onChange,
+  }: {
+    value?: FacialRegion;
+    onChange: (value: FacialRegion) => void;
+  }) => (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value as FacialRegion)}
+      className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+    >
+      <option value="" disabled>Selecione a região</option>
+      {FACIAL_REGIONS.map((r) => (
+        <option key={r} value={r}>{r}</option>
+      ))}
+    </select>
+  );
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Accordion type="single" collapsible defaultValue="aesthetic" className="space-y-4">
@@ -211,11 +243,9 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   onChange={(value) => handleBooleanChange("botox", value)}
                 />
                 {formData.botox && (
-                  <Input
-                    placeholder="Região"
-                    value={formData.botoxRegion || ""}
-                    onChange={(e) => handleTextChange("botoxRegion", e.target.value)}
-                    className="h-10 bg-white border-border"
+                  <RegionSelect
+                    value={formData.botoxRegion}
+                    onChange={(v) => setFormData((prev) => ({ ...prev, botoxRegion: v }))}
                   />
                 )}
               </div>
@@ -229,17 +259,15 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                 />
                 {formData.fillers && (
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Região"
-                      value={formData.fillersRegion || ""}
-                      onChange={(e) => handleTextChange("fillersRegion", e.target.value)}
-                      className="h-10 bg-white border-border"
+                    <RegionSelect
+                      value={formData.fillersRegion}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, fillersRegion: v }))}
                     />
                     <Input
                       placeholder="Produto utilizado"
                       value={formData.fillersProduct || ""}
                       onChange={(e) => handleTextChange("fillersProduct", e.target.value)}
-                      className="h-10 bg-white border-border"
+                      className="h-10 bg-card border-border"
                     />
                   </div>
                 )}
@@ -254,17 +282,15 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                 />
                 {formData.threads && (
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Região"
-                      value={formData.threadsRegion || ""}
-                      onChange={(e) => handleTextChange("threadsRegion", e.target.value)}
-                      className="h-10 bg-white border-border"
+                    <RegionSelect
+                      value={formData.threadsRegion}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, threadsRegion: v }))}
                     />
                     <Input
                       placeholder="Produto utilizado"
                       value={formData.threadsProduct || ""}
                       onChange={(e) => handleTextChange("threadsProduct", e.target.value)}
-                      className="h-10 bg-white border-border"
+                      className="h-10 bg-card border-border"
                     />
                   </div>
                 )}
@@ -279,17 +305,15 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                 />
                 {formData.surgicalLift && (
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Região"
-                      value={formData.surgicalLiftRegion || ""}
-                      onChange={(e) => handleTextChange("surgicalLiftRegion", e.target.value)}
-                      className="h-10 bg-white border-border"
+                    <RegionSelect
+                      value={formData.surgicalLiftRegion}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, surgicalLiftRegion: v }))}
                     />
                     <Input
                       placeholder="Produto utilizado"
                       value={formData.surgicalLiftProduct || ""}
                       onChange={(e) => handleTextChange("surgicalLiftProduct", e.target.value)}
-                      className="h-10 bg-white border-border"
+                      className="h-10 bg-card border-border"
                     />
                   </div>
                 )}
@@ -304,17 +328,15 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                 />
                 {formData.chemicalPeel && (
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Região"
-                      value={formData.chemicalPeelRegion || ""}
-                      onChange={(e) => handleTextChange("chemicalPeelRegion", e.target.value)}
-                      className="h-10 bg-white border-border"
+                    <RegionSelect
+                      value={formData.chemicalPeelRegion}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, chemicalPeelRegion: v }))}
                     />
                     <Input
                       placeholder="Produto utilizado"
                       value={formData.chemicalPeelProduct || ""}
                       onChange={(e) => handleTextChange("chemicalPeelProduct", e.target.value)}
-                      className="h-10 bg-white border-border"
+                      className="h-10 bg-card border-border"
                     />
                   </div>
                 )}
@@ -329,17 +351,15 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                 />
                 {formData.laser && (
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Região"
-                      value={formData.laserRegion || ""}
-                      onChange={(e) => handleTextChange("laserRegion", e.target.value)}
-                      className="h-10 bg-white border-border"
+                    <RegionSelect
+                      value={formData.laserRegion}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, laserRegion: v }))}
                     />
                     <Input
                       placeholder="Produto utilizado"
                       value={formData.laserProduct || ""}
                       onChange={(e) => handleTextChange("laserProduct", e.target.value)}
-                      className="h-10 bg-white border-border"
+                      className="h-10 bg-card border-border"
                     />
                   </div>
                 )}
@@ -427,7 +447,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                     onChange={(e) =>
                       handleNumberChange("pregnancyWeeks", e.target.value ? parseInt(e.target.value) : undefined)
                     }
-                    className="h-10 bg-white border-border"
+                    className="h-10 bg-card border-border"
                   />
                 </div>
               )}
@@ -448,7 +468,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   <textarea
                     value={formData.medicalTreatmentDetails || ""}
                     onChange={(e) => handleTextChange("medicalTreatmentDetails", e.target.value)}
-                    className="w-full border border-border rounded-lg p-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    className="w-full border border-border rounded-lg p-3 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                     rows={3}
                   />
                 </div>
@@ -478,7 +498,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   <textarea
                     value={formData.medicationDetails || ""}
                     onChange={(e) => handleTextChange("medicationDetails", e.target.value)}
-                    className="w-full border border-border rounded-lg p-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    className="w-full border border-border rounded-lg p-3 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                     rows={3}
                   />
                 </div>
@@ -500,7 +520,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   <textarea
                     value={formData.allergyDetails || ""}
                     onChange={(e) => handleTextChange("allergyDetails", e.target.value)}
-                    className="w-full border border-border rounded-lg p-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    className="w-full border border-border rounded-lg p-3 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                     rows={3}
                   />
                 </div>
@@ -550,7 +570,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   placeholder="Detalhes da cirurgia"
                   value={formData.surgeryDetails || ""}
                   onChange={(e) => handleTextChange("surgeryDetails", e.target.value)}
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               )}
 
@@ -564,7 +584,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   placeholder="Detalhes"
                   value={formData.tumorDetails || ""}
                   onChange={(e) => handleTextChange("tumorDetails", e.target.value)}
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               )}
 
@@ -578,7 +598,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   placeholder="Detalhes"
                   value={formData.skinProblemsDetails || ""}
                   onChange={(e) => handleTextChange("skinProblemsDetails", e.target.value)}
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               )}
 
@@ -592,7 +612,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   placeholder="Detalhes"
                   value={formData.orthopedicDetails || ""}
                   onChange={(e) => handleTextChange("orthopedicDetails", e.target.value)}
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               )}
 
@@ -606,7 +626,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   placeholder="Detalhes"
                   value={formData.prosthesisDetails || ""}
                   onChange={(e) => handleTextChange("prosthesisDetails", e.target.value)}
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               )}
 
@@ -620,7 +640,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                   placeholder="Detalhes"
                   value={formData.acidsDetails || ""}
                   onChange={(e) => handleTextChange("acidsDetails", e.target.value)}
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               )}
             </div>
@@ -633,7 +653,7 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
               <textarea
                 value={formData.additionalInfo || ""}
                 onChange={(e) => handleTextChange("additionalInfo", e.target.value)}
-                className="w-full border border-border rounded-lg p-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                className="w-full border border-border rounded-lg p-3 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                 rows={4}
                 placeholder="Alguma outra informação que não foi abordada?"
               />
@@ -642,44 +662,62 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
         </AccordionItem>
 
         {/* 4. Physical Assessment */}
-        <AccordionItem value="physical" className="border border-border rounded-lg">
+        <AccordionItem
+          value="physical"
+          id="physical-assessment-section"
+          className={`border rounded-lg ${physicalError ? "border-red-400" : "border-border"}`}
+        >
           <AccordionTrigger className="px-6 py-4 hover:bg-secondary">
-            <span className="font-semibold text-foreground">4. Avaliação Física</span>
+            <span className="font-semibold text-foreground">
+              4. Avaliação Física
+              <span className="text-red-500 ml-1">*</span>
+            </span>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-6 space-y-6 border-t border-border">
+            {physicalError && (
+              <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                {physicalError}
+              </p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-foreground font-medium">Pressão Arterial</Label>
+                <Label className="text-foreground font-medium">
+                  Pressão Arterial <span className="text-red-500">*</span>
+                </Label>
                 <Input
-                  placeholder="e.g., 120/80"
+                  placeholder="ex: 120/80"
                   value={formData.bloodPressure || ""}
                   onChange={(e) => handleTextChange("bloodPressure", e.target.value)}
-                  className="h-10 bg-white border-border"
+                  className={`h-10 bg-card border-border ${physicalError && !formData.bloodPressure ? "border-red-400" : ""}`}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground font-medium">Altura (cm)</Label>
+                <Label className="text-foreground font-medium">
+                  Altura (cm) <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   type="number"
-                  placeholder="e.g., 170"
+                  placeholder="ex: 170"
                   value={formData.height || ""}
                   onChange={(e) =>
                     handleNumberChange("height", e.target.value ? parseInt(e.target.value) : undefined)
                   }
-                  className="h-10 bg-white border-border"
+                  className={`h-10 bg-card border-border ${physicalError && !formData.height ? "border-red-400" : ""}`}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground font-medium">Peso Inicial (kg)</Label>
+                <Label className="text-foreground font-medium">
+                  Peso Inicial (kg) <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   type="number"
                   step="0.1"
-                  placeholder="e.g., 70.5"
+                  placeholder="ex: 70.5"
                   value={formData.initialWeight || ""}
                   onChange={(e) =>
                     handleNumberChange("initialWeight", e.target.value ? parseFloat(e.target.value) : undefined)
                   }
-                  className="h-10 bg-white border-border"
+                  className={`h-10 bg-card border-border ${physicalError && !formData.initialWeight ? "border-red-400" : ""}`}
                 />
               </div>
               <div className="space-y-2">
@@ -687,18 +725,29 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
                 <Input
                   type="number"
                   step="0.1"
-                  placeholder="e.g., 70.5"
+                  placeholder="ex: 70.5"
                   value={formData.finalWeight || ""}
                   onChange={(e) =>
                     handleNumberChange("finalWeight", e.target.value ? parseFloat(e.target.value) : undefined)
                   }
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               </div>
             </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Assinatura do paciente */}
+      <div className="pt-2">
+        <SignaturePad
+          label="Assinatura do paciente (opcional)"
+          value={formData.patientSignature}
+          onChange={(dataUrl) =>
+            setFormData((prev) => ({ ...prev, patientSignature: dataUrl ?? undefined }))
+          }
+        />
+      </div>
 
       {/* Form Actions */}
       <div className="flex gap-3 pt-6 border-t border-border">

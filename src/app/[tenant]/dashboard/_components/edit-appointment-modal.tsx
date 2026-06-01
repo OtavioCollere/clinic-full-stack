@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+﻿import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ import { getProfessionalsByFranchiseId } from "@/services/professional/professio
 import { getFranchises } from "@/services/franchise/franchise.service";
 import { getPatients } from "@/services/patients/patients.service";
 import { getProceduresByClinicId } from "@/services/procedures/procedure.service";
-import { getAppointmentById, editAppointment, type Appointment } from "@/services/appointments/appointment.service";
+import { getAppointmentById, editAppointment } from "@/services/appointments/appointment.service";
 
 interface AppointmentItem {
   procedureId: string;
@@ -58,6 +58,21 @@ interface Procedure {
   name: string;
   price: number | string;
 }
+
+const getLocalDateValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const hasCompleteAppointmentDateTime = (dateTime: string) =>
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateTime);
+
+const isPastAppointmentDateTime = (dateTime: string) => {
+  if (!hasCompleteAppointmentDateTime(dateTime)) return false;
+  return new Date(dateTime).getTime() <= Date.now();
+};
 
 export default function EditAppointmentModal({
   isOpen,
@@ -226,6 +241,48 @@ export default function EditAppointmentModal({
     }
   };
 
+  const timeOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    for (let h = 7; h <= 20; h++) {
+      for (let m = 0; m < 60; m += 10) {
+        if (h === 20 && m > 0) break;
+        const hh = String(h).padStart(2, "0");
+        const mm = String(m).padStart(2, "0");
+        opts.push({ value: `${hh}:${mm}`, label: `${hh}:${mm}` });
+      }
+    }
+    return opts;
+  }, []);
+
+  const availableTimeOptions = useMemo(() => {
+    const selectedDate = formData.startAt.slice(0, 10);
+    if (!selectedDate) return timeOptions;
+
+    return timeOptions.filter(
+      (opt) => !isPastAppointmentDateTime(`${selectedDate}T${opt.value}`)
+    );
+  }, [formData.startAt, timeOptions]);
+
+  const dateOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = -30; i < 90; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      opts.push({
+        value: getLocalDateValue(d),
+        label: d.toLocaleDateString("pt-BR", {
+          weekday: "short",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }),
+      });
+    }
+    return opts;
+  }, []);
+
   const filteredPatients = useMemo(() => {
     // If no search query, show all patients (limited to first 50 for performance)
     if (!patientSearchQuery) {
@@ -355,7 +412,9 @@ export default function EditAppointmentModal({
     formData.franchiseId &&
     formData.patientId &&
     formData.startAt &&
-    formData.durationInMinutes &&
+    hasCompleteAppointmentDateTime(formData.startAt) &&
+    !isPastAppointmentDateTime(formData.startAt) &&
+    formData.durationInMinutes !== "" &&
     appointmentItems.length > 0 &&
     appointmentItems.every((item) => item.procedureId && (isReturnConsultation || item.price > 0));
 
@@ -366,6 +425,11 @@ export default function EditAppointmentModal({
       return;
     }
 
+    if (isPastAppointmentDateTime(formData.startAt)) {
+      toast.error("Escolha um horário futuro para o agendamento.");
+      return;
+    }
+
     const payload = {
       professionalId: formData.professionalId,
       franchiseId: formData.franchiseId,
@@ -373,7 +437,7 @@ export default function EditAppointmentModal({
       name: formData.name || "Agendamento",
       appointmentItems: appointmentItems,
       startAt: new Date(formData.startAt).toISOString(),
-      durationInMinutes: parseInt(formData.durationInMinutes),
+      durationInMinutes: parseInt(formData.durationInMinutes, 10),
     };
 
     setIsSubmitting(true);
@@ -423,7 +487,7 @@ export default function EditAppointmentModal({
                   value={formData.franchiseId}
                   onValueChange={(value) => handleSelectChange("franchiseId", value)}
                 >
-                  <SelectTrigger id="franchiseId" className="bg-white border-border h-10">
+                  <SelectTrigger id="franchiseId" className="bg-card border-border h-10">
                     <SelectValue placeholder="Selecione uma unidade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -446,7 +510,7 @@ export default function EditAppointmentModal({
                   onValueChange={(value) => handleSelectChange("professionalId", value)}
                   disabled={!formData.franchiseId || isLoadingProfessionals}
                 >
-                  <SelectTrigger id="professionalId" className="bg-white border-border h-10">
+                  <SelectTrigger id="professionalId" className="bg-card border-border h-10">
                     <SelectValue placeholder="Selecione um profissional" />
                   </SelectTrigger>
                   <SelectContent>
@@ -480,7 +544,7 @@ export default function EditAppointmentModal({
                     }}
                     onFocus={() => setShowPatientDropdown(true)}
                     onBlur={() => setTimeout(() => setShowPatientDropdown(false), 100)}
-                    className="h-10 bg-white border-border pr-10"
+                    className="h-10 bg-card border-border pr-10"
                   />
                   {formData.patientId && (
                     <Button
@@ -495,7 +559,7 @@ export default function EditAppointmentModal({
                   )}
 
                   {showPatientDropdown && filteredPatients.length > 0 && (
-                    <div className="absolute z-10 w-full bg-white border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 w-full bg-card border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
                       {filteredPatients.map((patient) => (
                         <button
                           key={patient.id}
@@ -512,7 +576,7 @@ export default function EditAppointmentModal({
                     </div>
                   )}
                   {showPatientDropdown && filteredPatients.length === 0 && patientSearchQuery && (
-                    <div className="absolute z-10 w-full bg-white border border-border rounded-md shadow-lg mt-1 p-4 text-sm text-muted-foreground">
+                    <div className="absolute z-10 w-full bg-card border border-border rounded-md shadow-lg mt-1 p-4 text-sm text-muted-foreground">
                       Nenhum paciente encontrado
                     </div>
                   )}
@@ -548,23 +612,67 @@ export default function EditAppointmentModal({
                   placeholder="e.g., Consulta de Rotina"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="h-10 bg-white border-border"
+                  className="h-10 bg-card border-border"
                 />
               </div>
 
               {/* Start Date/Time */}
               <div className="space-y-2">
-                <Label htmlFor="startAt" className="text-foreground font-semibold">
-                  Data e Hora *
-                </Label>
-                <Input
-                  id="startAt"
-                  name="startAt"
-                  type="datetime-local"
-                  value={formData.startAt}
-                  onChange={handleInputChange}
-                  className="h-10 bg-white border-border"
-                />
+                <Label className="text-foreground font-semibold">Data e Hora *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Select
+                    value={formData.startAt.slice(0, 10)}
+                    onValueChange={(date) =>
+                      setFormData((prev) => {
+                        const time = prev.startAt.slice(11, 16) || "08:00";
+                        const nextStartAt = `${date}T${time}`;
+
+                        return {
+                          ...prev,
+                          startAt: isPastAppointmentDateTime(nextStartAt)
+                            ? `${date}T`
+                            : nextStartAt,
+                        };
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-10 bg-card border-border">
+                      <SelectValue placeholder="Data" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dateOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={formData.startAt.slice(11, 16)}
+                    onValueChange={(time) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        startAt: `${prev.startAt.slice(0, 10) || getLocalDateValue(new Date())}T${time}`,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-10 bg-card border-border">
+                      <SelectValue placeholder="Horário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTimeOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                      {availableTimeOptions.length === 0 && (
+                        <SelectItem value="__none" disabled>
+                          Nenhum horário futuro hoje
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Duration */}
@@ -581,43 +689,40 @@ export default function EditAppointmentModal({
                   step="15"
                   value={formData.durationInMinutes}
                   onChange={handleInputChange}
-                  className="h-10 bg-white border-border mb-2"
+                  className="h-10 bg-card border-border mb-2"
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  {[["30", "30m"], ["60", "1h"], ["90", "1:30h"]].map(([val, label]) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => handleDurationShortcut(Number(val))}
+                      className={`text-xs px-3 py-1.5 rounded border transition-colors ${
+                        formData.durationInMinutes === val
+                          ? "bg-primary text-white border-primary"
+                          : "border-border text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                   <button
                     type="button"
-                    onClick={() => handleDurationShortcut(30)}
+                    onClick={() => handleDurationShortcut(0)}
                     className={`text-xs px-3 py-1.5 rounded border transition-colors ${
-                      formData.durationInMinutes === "30"
-                        ? "bg-primary text-white border-primary"
+                      formData.durationInMinutes === "0"
+                        ? "bg-orange-500 text-white border-orange-500"
                         : "border-border text-foreground hover:bg-secondary"
                     }`}
                   >
-                    30m
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDurationShortcut(60)}
-                    className={`text-xs px-3 py-1.5 rounded border transition-colors ${
-                      formData.durationInMinutes === "60"
-                        ? "bg-primary text-white border-primary"
-                        : "border-border text-foreground hover:bg-secondary"
-                    }`}
-                  >
-                    1h
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDurationShortcut(90)}
-                    className={`text-xs px-3 py-1.5 rounded border transition-colors ${
-                      formData.durationInMinutes === "90"
-                        ? "bg-primary text-white border-primary"
-                        : "border-border text-foreground hover:bg-secondary"
-                    }`}
-                  >
-                    1:30h
+                    Sem duração
                   </button>
                 </div>
+                {formData.durationInMinutes === "0" && (
+                  <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded-md px-3 py-2 mt-1">
+                    ⚠️ Sem duração definida — podem ocorrer conflitos de agenda.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -673,7 +778,7 @@ export default function EditAppointmentModal({
                       value={item.procedureId}
                       onValueChange={(value) => handleProcedureSelect(index, value)}
                     >
-                      <SelectTrigger className="bg-white border-border h-10">
+                      <SelectTrigger className="bg-card border-border h-10">
                         <SelectValue placeholder="Selecione um procedimento" />
                       </SelectTrigger>
                       <SelectContent>
@@ -705,7 +810,7 @@ export default function EditAppointmentModal({
                         )
                       }
                       disabled={isReturnConsultation}
-                      className="h-10 bg-white border-border disabled:opacity-50"
+                      className="h-10 bg-card border-border disabled:opacity-50"
                     />
                   </div>
 
@@ -718,7 +823,7 @@ export default function EditAppointmentModal({
                       placeholder="Adicione observações sobre este procedimento..."
                       value={item.notes || ""}
                       onChange={(e) => handleItemChange(index, "notes", e.target.value)}
-                      className="w-full border border-border rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                      className="w-full border border-border rounded-lg p-2 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                       rows={2}
                     />
                   </div>

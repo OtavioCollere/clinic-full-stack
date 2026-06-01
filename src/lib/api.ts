@@ -37,7 +37,7 @@ api.interceptors.response.use(
 
       try {
         await api.post("/refresh");
-        return api(originalRequest); // 🔥 reexecuta a request original
+        return api(originalRequest);
       } catch (refreshError) {
         if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/login")) {
           const tenant = extractTenantFromPath(window.location.pathname);

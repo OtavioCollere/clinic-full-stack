@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -85,7 +85,6 @@ export default function ChangePasswordPage() {
       // Aguarda um pouco para garantir que o usuário veja a mensagem
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Redireciona para o login
       const loginPath = createTenantLink(tenant, "/auth/login");
       router.push(loginPath);
     } catch (error: any) {
@@ -126,7 +125,7 @@ export default function ChangePasswordPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* New Password */}
             <div className="space-y-2">
@@ -141,7 +140,7 @@ export default function ChangePasswordPage() {
                   placeholder="••••••••"
                   value={formData.newPassword}
                   onChange={handleChange}
-                  className="pr-10 h-11 bg-white border-border"
+                  className="pr-10 h-11 bg-card border-border"
                   required
                   minLength={6}
                 />
@@ -175,7 +174,7 @@ export default function ChangePasswordPage() {
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="pr-10 h-11 bg-white border-border"
+                  className="pr-10 h-11 bg-card border-border"
                   required
                   minLength={6}
                 />
@@ -211,7 +210,7 @@ export default function ChangePasswordPage() {
           </form>
 
           {/* Info Box */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="mt-6 p-4 bg-primary/10 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-900">
               <strong>Dica:</strong> Use uma mistura de letras maiúsculas, minúsculas, números
               e símbolos para maior segurança.

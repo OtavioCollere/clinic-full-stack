@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, Bell, LogOut, ChevronDown } from "lucide-react";
+import { Bell, LogOut, ChevronDown } from "lucide-react";
 import { useAuthContext } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,53 +34,45 @@ export function AppLayout({ children, menuItems, tenant, userName, clinicName }:
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-border h-16 px-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {!isSidebarOpen && (
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                type="button"
-              >
-                <Menu className="w-5 h-5 text-foreground" />
-              </button>
-            )}
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">
-                {clinicName ?? "Cliniker"}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Bem-vindo de volta, {userName ?? "Usuário"}
-              </p>
-            </div>
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header
+          className="h-14 px-6 flex items-center justify-between shrink-0 border-b border-white/[0.08]"
+          style={{ background: "var(--header-bg-gradient)" }}
+        >
+          <div>
+            <p className="text-base font-semibold text-white leading-tight">
+              {clinicName ?? "Cliniker"}
+            </p>
+            <p className="text-[13px] text-white/50">
+              {userName ?? "Usuário"}
+            </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              className="p-2 hover:bg-secondary rounded-lg transition-colors relative"
+              className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.06] transition-colors relative"
             >
-              <Bell className="w-5 h-5 text-foreground" />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full border border-[#080B1A]" />
             </button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-3 px-3 py-2 hover:bg-secondary rounded-lg transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white text-sm font-bold shrink-0">
                     {userName?.charAt(0).toUpperCase() ?? "U"}
                   </div>
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="hidden sm:block text-[15px] text-white font-medium">
                     {userName ?? "Usuário"}
                   </span>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <ChevronDown className="w-4 h-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
                   <span>Perfil</span>
                 </DropdownMenuItem>
@@ -90,7 +81,7 @@ export function AppLayout({ children, menuItems, tenant, userName, clinicName }:
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="text-red-600 cursor-pointer focus:text-red-600"
+                  className="text-red-400 cursor-pointer focus:text-red-400"
                   onSelect={(e) => {
                     e.preventDefault();
                     logout();
@@ -104,7 +95,7 @@ export function AppLayout({ children, menuItems, tenant, userName, clinicName }:
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-background p-8">
+        <main className="flex-1 overflow-y-auto p-8" style={{ background: "var(--page-bg)" }}>
           {children}
         </main>
       </div>

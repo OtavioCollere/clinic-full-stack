@@ -39,13 +39,28 @@ export function ProtectedRoute({ children, portal }: ProtectedRouteProps) {
       return;
     }
 
+    // Usuário autenticado mas sem clínica vinculada → precisa criar a clínica
+    if (!user.clinicId && !pathname?.includes("/clinic/")) {
+      const createClinicPath = tenant ? addTenantToPath(tenant, "/clinic/create") : "/clinic/create";
+      router.replace(createClinicPath);
+      return;
+    }
+
+    // Owner/Admin com clínica mas sem franquia → precisa criar a primeira franquia
+    const isStaff = user.clinicRole === "OWNER" || user.clinicRole === "ADMIN";
+    if (isStaff && user.clinicId && user.hasFranchise === false && !pathname?.includes("/franchise/")) {
+      const createFranchisePath = tenant ? addTenantToPath(tenant, "/franchise/create") : "/franchise/create";
+      router.replace(createFranchisePath);
+      return;
+    }
+
     const role = (user.clinicRole ?? "PATIENT") as ClinicRoleType;
     if (!canAccessPortal(role, portal)) {
       const correctBase = getPortalBaseForRole(role);
       const redirectPath = tenant ? addTenantToPath(tenant, correctBase) : correctBase;
       router.replace(redirectPath);
     }
-  }, [user, loading, portal, tenant, router]);
+  }, [user, loading, portal, tenant, router, pathname]);
 
   if (loading) {
     return (

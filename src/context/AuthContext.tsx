@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from "react";
 import { fetchMe, logoutUser } from "@/services/auth/auth.service";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { extractTenantFromPath, addTenantToPath } from "@/lib/tenant";
 
@@ -21,6 +21,10 @@ export interface User {
   patientId?: string;
   /** Apenas para PROFESSIONAL: id do profissional (para agendamentos) */
   professionalId?: string;
+  /** Apenas para PATIENT: se já possui anamnese preenchida */
+  isAnamneseDone?: boolean;
+  /** Se a clínica já possui ao menos uma franquia cadastrada */
+  hasFranchise?: boolean;
 }
 
 interface AuthContextType {
@@ -36,6 +40,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
   const router = useRouter();
 
   const doFetchUser = async () => {
@@ -56,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAnamneseDone: response.isAnamneseDone,
           patientId: response.patientId,
           professionalId: response.professionalId,
+          hasFranchise: response.hasFranchise,
         });
       } else {
         setUser(null);
@@ -68,8 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchUser = async () => {
-    if (typeof window === "undefined") return;
-    if (window.location.pathname.includes("/auth/")) {
+    if (typeof window === "undefined" || !pathname) return;
+    if (pathname.includes("/auth/")) {
       setLoading(false);
       return;
     }
@@ -81,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const handleLogout = async () => {
-    if (typeof window === "undefined") return;
-    const tenant = extractTenantFromPath(window.location.pathname);
+    const tenant =
+      typeof window !== "undefined" ? extractTenantFromPath(window.location.pathname) : null;
     const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
 
     try {
@@ -96,16 +102,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.error(msg || "Erro ao fazer logout");
     } finally {
       setUser(null);
-      // Redireciona no próximo tick para não ser interrompido pelo fechamento do dropdown
-      setTimeout(() => {
-        window.location.href = loginPath;
-      }, 0);
+      router.replace(loginPath);
     }
   };
 
+  useLayoutEffect(() => {
+    if (!pathname || pathname.includes("/auth/")) return;
+    setLoading(true);
+  }, [pathname]);
+
   useEffect(() => {
     fetchUser();
-  }, []);
+  }, [pathname]);
 
   return (
     <AuthContext.Provider value={{ user, loading, setUser, refetchUser, logout: handleLogout }}>

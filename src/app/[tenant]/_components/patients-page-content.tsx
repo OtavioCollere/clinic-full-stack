@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { ClipboardList, Plus, Search, Stethoscope } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { type MouseEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,11 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus } from "lucide-react";
+import { useAuthContext } from "@/context/AuthContext";
 import { useTenant } from "@/hooks/use-tenant";
 import { createTenantLink } from "@/lib/tenant-navigation";
 import { getPatients } from "@/services/patients/patients.service";
-import { useAuthContext } from "@/context/AuthContext";
 
 interface Patient {
   id: string;
@@ -40,9 +40,13 @@ interface Patient {
 
 interface PatientsPageContentProps {
   portalBase: string;
+  onPatientClick?: (patient: Patient) => void;
 }
 
-export default function PatientsPageContent({ portalBase }: PatientsPageContentProps) {
+export default function PatientsPageContent({
+  portalBase,
+  onPatientClick,
+}: PatientsPageContentProps) {
   const router = useRouter();
   const tenant = useTenant();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -77,15 +81,16 @@ export default function PatientsPageContent({ portalBase }: PatientsPageContentP
       patientPhone.includes(searchTerm.toLowerCase());
     const matchesFranchise =
       franchiseFilter === "all" || patient.franchiseName === franchiseFilter;
-    const matchesStatus = statusFilter === "all" || patient.isEmailVerified === true;
+    const matchesStatus =
+      statusFilter === "all" || patient.isEmailVerified === true;
     return matchesSearch && matchesFranchise && matchesStatus;
   });
 
   const uniqueFranchises = Array.from(
-    new Set(patients.map((p) => p.franchiseName).filter(Boolean))
+    new Set(patients.map((p) => p.franchiseName).filter(Boolean)),
   );
   const uniqueStatuses = Array.from(
-    new Set(patients.map((p) => p.status).filter(Boolean))
+    new Set(patients.map((p) => p.status).filter(Boolean)),
   );
 
   const getStatusColor = (status?: boolean) => {
@@ -95,7 +100,7 @@ export default function PatientsPageContent({ portalBase }: PatientsPageContentP
       case false:
         return "bg-yellow-100 text-yellow-700";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-border text-foreground";
     }
   };
 
@@ -106,11 +111,28 @@ export default function PatientsPageContent({ portalBase }: PatientsPageContentP
       case false:
         return "bg-yellow-100 text-yellow-700";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-border text-foreground";
     }
   };
 
-  const registerPath = createTenantLink(tenant, `${portalBase}/patients/register`);
+  const registerPath = createTenantLink(
+    tenant,
+    `${portalBase}/patients/register`,
+  );
+
+  const openPatientHistory = (
+    event: MouseEvent<HTMLButtonElement>,
+    patientId: string,
+    tab: "procedimentos" | "anamnese",
+  ) => {
+    event.stopPropagation();
+    router.push(
+      createTenantLink(
+        tenant,
+        `${portalBase}/patients/${patientId}/history?tab=${tab}`,
+      ),
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -137,12 +159,12 @@ export default function PatientsPageContent({ portalBase }: PatientsPageContentP
             placeholder="Pesquisar por nome, e-mail, telefone ou CPF..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white border-border h-11"
+            className="pl-10 bg-card border-border h-11"
           />
         </div>
         <div className="flex gap-4 flex-wrap">
           <Select value={franchiseFilter} onValueChange={setFranchiseFilter}>
-            <SelectTrigger className="bg-white border-border h-10 w-48">
+            <SelectTrigger className="bg-card border-border h-10 w-48">
               <SelectValue placeholder="Filtrar por franquia" />
             </SelectTrigger>
             <SelectContent>
@@ -155,7 +177,7 @@ export default function PatientsPageContent({ portalBase }: PatientsPageContentP
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="bg-white border-border h-10 w-48">
+            <SelectTrigger className="bg-card border-border h-10 w-48">
               <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
             <SelectContent>
@@ -170,20 +192,27 @@ export default function PatientsPageContent({ portalBase }: PatientsPageContentP
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border overflow-hidden shadow-sm">
-        <div className="grid grid-cols-6 gap-4 p-6 border-b border-border bg-secondary">
-          <div className="text-sm font-semibold text-foreground">Nome do Paciente</div>
+      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+        <div className="hidden xl:grid grid-cols-[minmax(180px,1.35fr)_minmax(130px,0.9fr)_minmax(190px,1.25fr)_minmax(120px,0.85fr)_minmax(120px,0.75fr)_minmax(115px,0.75fr)_220px] gap-4 p-6 border-b border-border bg-secondary">
+          <div className="text-sm font-semibold text-foreground">
+            Nome do Paciente
+          </div>
           <div className="text-sm font-semibold text-foreground">Telefone</div>
           <div className="text-sm font-semibold text-foreground">E-mail</div>
           <div className="text-sm font-semibold text-foreground">Franquia</div>
-          <div className="text-sm font-semibold text-foreground">Verificado</div>
+          <div className="text-sm font-semibold text-foreground">
+            Verificado
+          </div>
           <div className="text-sm font-semibold text-foreground">Anamnese</div>
+          <div className="text-sm font-semibold text-foreground">Ações</div>
         </div>
 
         {filteredPatients.length === 0 ? (
           <div className="p-12 text-center">
             <Search className="w-12 h-12 mx-auto text-muted-foreground mb-3 opacity-50" />
-            <p className="text-foreground font-medium mb-2">Nenhum paciente encontrado</p>
+            <p className="text-foreground font-medium mb-2">
+              Nenhum paciente encontrado
+            </p>
             <p className="text-sm text-muted-foreground mb-6">
               {patients.length === 0
                 ? "Crie seu primeiro paciente para começar"
@@ -201,36 +230,94 @@ export default function PatientsPageContent({ portalBase }: PatientsPageContentP
             {filteredPatients.map((patient) => (
               <div
                 key={patient.id}
-                className="grid grid-cols-6 gap-4 p-6 items-center hover:bg-secondary/50 transition-colors cursor-pointer"
+                className="grid gap-4 p-4 transition-colors hover:bg-secondary/40 sm:p-5 xl:grid-cols-[minmax(180px,1.35fr)_minmax(130px,0.9fr)_minmax(190px,1.25fr)_minmax(120px,0.85fr)_minmax(120px,0.75fr)_minmax(115px,0.75fr)_220px] xl:items-center xl:p-6"
               >
                 <div>
-                  <p className="font-medium text-foreground text-sm">{patient.name || "N/A"}</p>
-                  <p className="text-xs text-muted-foreground">{patient.cpf || "N/A"}</p>
+                  <span className="mb-1 block text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">
+                    Paciente
+                  </span>
+                  <button
+                    type="button"
+                    className="font-medium text-foreground text-sm text-left hover:text-primary transition-colors"
+                    onClick={() => onPatientClick?.(patient)}
+                  >
+                    {patient.name || "N/A"}
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    {patient.cpf || "N/A"}
+                  </p>
                 </div>
-                <div className="text-sm text-foreground">{patient.phone || "N/A"}</div>
+                <div className="text-sm text-foreground">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">
+                    Telefone
+                  </span>
+                  {patient.phone || "N/A"}
+                </div>
                 <div className="text-sm text-muted-foreground truncate">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">
+                    E-mail
+                  </span>
                   {patient.email || "N/A"}
                 </div>
                 <div className="text-sm text-foreground">
+                  <span className="mb-1 block text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">
+                    Franquia
+                  </span>
                   {patient.franchiseName || "N/A"}
                 </div>
                 <div>
+                  <span className="mb-1 block text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">
+                    Verificado
+                  </span>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${getStatusColor(
-                      patient.isEmailVerified
+                      patient.isEmailVerified,
                     )}`}
                   >
                     {patient.isEmailVerified ? "Verificado" : "Não verificado"}
                   </span>
                 </div>
                 <div>
+                  <span className="mb-1 block text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">
+                    Anamnese
+                  </span>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${getAnamneseStatusColor(
-                      patient.isAnamneseDone
+                      patient.isAnamneseDone,
                     )}`}
                   >
                     {patient.isAnamneseDone ? "Concluída" : "Pendente"}
                   </span>
+                </div>
+                <div>
+                  <span className="mb-2 block text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">
+                    Ações
+                  </span>
+                  <div className="inline-flex h-9 w-full overflow-hidden rounded-md border border-border bg-card shadow-sm sm:w-auto">
+                    <button
+                      type="button"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none sm:flex-none"
+                      onClick={(event) =>
+                        openPatientHistory(event, patient.id, "anamnese")
+                      }
+                      title="Ver histórico de anamnese"
+                    >
+                      <ClipboardList className="h-3.5 w-3.5 text-primary" />
+                      Anamnese
+                    </button>
+                    <div className="w-px bg-border" />
+                    <button
+                      type="button"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none sm:flex-none"
+                      onClick={(event) =>
+                        openPatientHistory(event, patient.id, "procedimentos")
+                      }
+                      title="Ver histórico de procedimentos"
+                    >
+                      <Stethoscope className="h-3.5 w-3.5 text-primary" />
+                      Procedimentos
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

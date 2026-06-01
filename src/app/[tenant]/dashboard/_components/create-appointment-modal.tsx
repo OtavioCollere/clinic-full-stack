@@ -1,3 +1,5 @@
+﻿"use client";
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,13 +13,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Plus, Trash2, X as XIcon } from "lucide-react";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Building2,
+  UserCheck,
+  User,
+  CalendarDays,
+  Stethoscope,
+  Plus,
+  Trash2,
+  X as XIcon,
+  Pencil,
+  Check,
+} from "lucide-react";
 import { useAuthContext } from "@/context/AuthContext";
 import { getProfessionalsByFranchiseId } from "@/services/professional/professional.service";
 import { getFranchises } from "@/services/franchise/franchise.service";
@@ -35,6 +47,10 @@ interface AppointmentItem {
 interface CreateAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialStartAt?: string;
+  initialDurationMinutes?: number;
+  lockedProfessionalId?: string;
+  lockedProfessionalName?: string;
 }
 
 interface Professional {
@@ -58,11 +74,31 @@ interface Procedure {
   price: number | string;
 }
 
+const getLocalDateValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getAppointmentStartAt = (date: string, time: string) =>
+  date && time ? new Date(`${date}T${time}:00`) : null;
+
+const isPastAppointmentDateTime = (date: string, time: string) => {
+  const startAt = getAppointmentStartAt(date, time);
+  return !!startAt && startAt.getTime() <= Date.now();
+};
+
 export default function CreateAppointmentModal({
   isOpen,
   onClose,
+  initialStartAt,
+  initialDurationMinutes,
+  lockedProfessionalId,
+  lockedProfessionalName,
 }: CreateAppointmentModalProps) {
   const { user } = useAuthContext();
+  const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isLoadingProfessionals, setIsLoadingProfessionals] = useState(false);
@@ -73,664 +109,798 @@ export default function CreateAppointmentModal({
     professionalId: "",
     franchiseId: "",
     patientId: "",
-    name: "",
-    startAt: "",
-    durationInMinutes: "",
+    date: "",
+    time: "",
+    durationInMinutes: "30",
   });
-
   const [appointmentItems, setAppointmentItems] = useState<AppointmentItem[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [franchises, setFranchises] = useState<Franchise[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [procedures, setProcedures] = useState<Procedure[]>([]);
 
-  // Buscar pacientes quando o termo de busca mudar
+  // Reset state when modal closes; pre-fill when it opens from a calendar slot
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentStep(0);
+      setFormData({
+        professionalId: "",
+        franchiseId: "",
+        patientId: "",
+        date: "",
+        time: "",
+        durationInMinutes: "30",
+      });
+      setAppointmentItems([]);
+      setIsReturnConsultation(false);
+      setPatientSearchQuery("");
+      return;
+    }
+
+    if (initialStartAt) {
+      const d = new Date(initialStartAt);
+      const date = getLocalDateValue(d);
+      let h = d.getHours();
+      let m = Math.round(d.getMinutes() / 10) * 10;
+      if (m === 60) { m = 0; h = (h + 1) % 24; }
+      const time = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      setFormData((prev) => ({ ...prev, date, time }));
+    }
+    if (initialDurationMinutes != null) {
+      setFormData((prev) => ({
+        ...prev,
+        durationInMinutes: String(initialDurationMinutes),
+      }));
+    }
+  }, [isOpen]);
+
+  // Fetch franchises + procedures on open
   useEffect(() => {
     if (!isOpen || !user?.clinicId) return;
-
-    const fetchPatients = async () => {
+    const fetchData = async () => {
       try {
-        const patientsResponse = await getPatients(
+        setIsLoadingData(true);
+        const [fr, pr] = await Promise.all([
+          getFranchises(user.clinicId as string),
+          getProceduresByClinicId(user.clinicId as string),
+        ]);
+        setFranchises(fr);
+        setProcedures(pr);
+      } catch {
+        toast.error("Erro ao carregar dados.");
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    fetchData();
+  }, [isOpen, user?.clinicId]);
+
+  // Fetch professionals when franchise changes
+  useEffect(() => {
+    if (!formData.franchiseId) {
+      setProfessionals([]);
+      return;
+    }
+    const fetchProfessionals = async () => {
+      try {
+        setIsLoadingProfessionals(true);
+        const profs = await getProfessionalsByFranchiseId(formData.franchiseId);
+        setProfessionals(profs);
+        if (
+          formData.professionalId &&
+          !profs.some((p: Professional) => p.id === formData.professionalId)
+        ) {
+          setFormData((prev) => ({ ...prev, professionalId: "" }));
+        }
+      } catch {
+        toast.error("Erro ao carregar profissionais.");
+      } finally {
+        setIsLoadingProfessionals(false);
+      }
+    };
+    fetchProfessionals();
+  }, [formData.franchiseId]);
+
+  // Fetch patients with debounce
+  useEffect(() => {
+    if (!isOpen || !user?.clinicId) return;
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await getPatients(
           user.clinicId as string,
           1,
           100,
           patientSearchQuery || undefined
         );
-        // O backend retorna um array diretamente
-        const patientsList = Array.isArray(patientsResponse)
-          ? patientsResponse
-          : [];
-        setPatients(patientsList);
-      } catch (error) {
-        console.error("Erro ao buscar pacientes:", error);
+        setPatients(Array.isArray(res) ? res : []);
+      } catch {
+        /* silent */
       }
-    };
-
-    const timeoutId = setTimeout(() => {
-      fetchPatients();
     }, 300);
-
-    return () => clearTimeout(timeoutId);
+    return () => clearTimeout(timeout);
   }, [isOpen, user?.clinicId, patientSearchQuery]);
 
-  // Ao abrir o modal: definir duração padrão (30 min) para o botão poder habilitar
-  useEffect(() => {
-    if (!isOpen) return;
-    setFormData((prev) =>
-      prev.durationInMinutes ? prev : { ...prev, durationInMinutes: "30" }
-    );
-  }, [isOpen]);
-
-  // Buscar dados iniciais
-  useEffect(() => {
-    if (!isOpen || !user?.clinicId) return;
-
-    const fetchData = async () => {
-      try {
-        setIsLoadingData(true);
-        const [franchisesResponse, proceduresResponse] = await Promise.all([
-          getFranchises(user.clinicId as string),
-          getProceduresByClinicId(user.clinicId as string),
-        ]);
-        setFranchises(franchisesResponse);
-        setProcedures(proceduresResponse);
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error);
-        toast.error("Erro ao carregar dados. Tente novamente.");
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-
-    fetchData();
-  }, [isOpen, user?.clinicId]);
-
-  // Buscar profissionais quando franquia for selecionada
-  useEffect(() => {
-    if (!formData.franchiseId) {
-      setProfessionals([]);
-      setFormData((prev) => ({ ...prev, professionalId: "" }));
-      return;
-    }
-
-    const fetchProfessionals = async () => {
-      try {
-        setIsLoadingProfessionals(true);
-        const professionalsResponse = await getProfessionalsByFranchiseId(formData.franchiseId);
-        setProfessionals(professionalsResponse);
-        // Limpar seleção de profissional se não estiver mais na lista
-        if (formData.professionalId) {
-          const professionalExists = professionalsResponse.some(
-            (p: Professional) => p.id === formData.professionalId
-          );
-          if (!professionalExists) {
-            setFormData((prev) => ({ ...prev, professionalId: "" }));
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao buscar profissionais:", error);
-        toast.error("Erro ao carregar profissionais. Tente novamente.");
-      } finally {
-        setIsLoadingProfessionals(false);
-      }
-    };
-
-    fetchProfessionals();
-  }, [formData.franchiseId]);
-
-  // Filtrar pacientes baseado na busca
-  const filteredPatients = useMemo(() => {
-    if (!patientSearchQuery) return patients;
-    const query = patientSearchQuery.toLowerCase();
-    return patients.filter((patient) =>
-      patient.name.toLowerCase().includes(query)
-    );
-  }, [patients, patientSearchQuery]);
-
-  // Auto-selecionar paciente quando há exatamente um resultado e o nome digitado é igual ao do paciente (digitou o nome mas não clicou no dropdown)
-  useEffect(() => {
-    if (filteredPatients.length !== 1 || !patientSearchQuery.trim()) return;
-    const match = filteredPatients[0];
-    const queryNorm = patientSearchQuery.trim().toLowerCase();
-    const nameNorm = (match.name || "").trim().toLowerCase();
-    if (nameNorm === queryNorm) {
-      setFormData((prev) => (prev.patientId === match.id ? prev : { ...prev, patientId: match.id }));
-    }
-  }, [filteredPatients, patientSearchQuery]);
-
-  // Zerar preços quando checkbox de retorno for marcado
+  // Zero prices when return consultation is toggled on
   useEffect(() => {
     if (isReturnConsultation) {
-      setAppointmentItems((prevItems) =>
-        prevItems.map((item) => ({ ...item, price: 0 }))
-      );
+      setAppointmentItems((prev) => prev.map((item) => ({ ...item, price: 0 })));
     }
   }, [isReturnConsultation]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
+  const filteredPatients = useMemo(() => {
+    if (!patientSearchQuery) return patients;
+    const q = patientSearchQuery.toLowerCase();
+    return patients.filter((p) => p.name.toLowerCase().includes(q));
+  }, [patients, patientSearchQuery]);
+
+  const timeOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    for (let h = 7; h <= 20; h++) {
+      for (let m = 0; m < 60; m += 10) {
+        if (h === 20 && m > 0) break;
+        const hh = String(h).padStart(2, "0");
+        const mm = String(m).padStart(2, "0");
+        opts.push({ value: `${hh}:${mm}`, label: `${hh}:${mm}` });
+      }
+    }
+    return opts;
+  }, []);
+
+  const availableTimeOptions = useMemo(() => {
+    if (!formData.date) return timeOptions;
+
+    return timeOptions.filter(
+      (opt) => !isPastAppointmentDateTime(formData.date, opt.value)
+    );
+  }, [formData.date, timeOptions]);
+
+  const dateOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      opts.push({
+        value: getLocalDateValue(d),
+        label: d.toLocaleDateString("pt-BR", {
+          weekday: "short",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }),
+      });
+    }
+    return opts;
+  }, []);
+
+
+  // ─── Step handlers ──────────────────────────────────────────────────────────
+
+  const handleFranchiseSelect = (value: string) => {
+    const changed = value !== formData.franchiseId;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      franchiseId: value,
+      ...(changed ? { professionalId: lockedProfessionalId ?? "" } : {}),
     }));
+    setCurrentStep(lockedProfessionalId ? 2 : 1);
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleProfessionalSelect = (value: string) => {
+    setFormData((prev) => ({ ...prev, professionalId: value }));
+    setCurrentStep(2);
   };
+
+  const handlePatientSelect = (patientId: string) => {
+    const patient = patients.find((p) => p.id === patientId);
+    if (!patient) return;
+    setFormData((prev) => ({ ...prev, patientId }));
+    setPatientSearchQuery(patient.name);
+    setIsPatientDropdownOpen(false);
+    setCurrentStep(3);
+  };
+
+  const handleDateTimeConfirm = () => {
+    if (isPastAppointmentDateTime(formData.date, formData.time)) {
+      toast.error("Escolha um horário futuro para o agendamento.");
+      return;
+    }
+
+    if (formData.date && formData.time && formData.durationInMinutes) {
+      setCurrentStep(4);
+    }
+  };
+
+  // ─── Procedure handlers ─────────────────────────────────────────────────────
 
   const handleAddProcedure = () => {
-    const newPrice = isReturnConsultation ? 0 : undefined;
-    setAppointmentItems([
-      ...appointmentItems,
-      { procedureId: "", price: newPrice ?? 0, notes: "" },
-    ]);
+    setAppointmentItems((prev) => [...prev, { procedureId: "", price: 0, notes: "" }]);
   };
 
   const handleRemoveProcedure = (index: number) => {
-    setAppointmentItems(appointmentItems.filter((_, i) => i !== index));
-  };
-
-  const handleItemChange = (
-    index: number,
-    field: keyof AppointmentItem,
-    value: string | number
-  ) => {
-    const newItems = [...appointmentItems];
-    if (field === "price") {
-      newItems[index][field] = parseFloat(value as string) || 0;
-    } else {
-      newItems[index][field] = value as string;
-    }
-    setAppointmentItems(newItems);
+    setAppointmentItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleProcedureSelect = (index: number, procedureId: string) => {
     const procedure = procedures.find((p) => p.id === procedureId);
-    const newItems = [...appointmentItems];
-    newItems[index].procedureId = procedureId;
-
-    if (procedure) {
-      const price = typeof procedure.price === "string"
+    const rawPrice = procedure
+      ? typeof procedure.price === "string"
         ? parseFloat(procedure.price)
-        : procedure.price;
-      // Se for consulta de retorno, sempre zerar o preço
-      newItems[index].price = isReturnConsultation ? 0 : price || 0;
-    } else {
-      newItems[index].price = 0;
-    }
-
-    setAppointmentItems(newItems);
+        : procedure.price
+      : 0;
+    const price = isReturnConsultation ? 0 : rawPrice || 0;
+    setAppointmentItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], procedureId, price };
+      return next;
+    });
   };
 
-  const handlePatientSelect = (patientId: string | null) => {
-    if (!patientId) {
-      setFormData((prev) => ({
-        ...prev,
-        patientId: "",
-      }));
-      setPatientSearchQuery("");
-      return;
-    }
-    const selected = patients.find((p) => p.id === patientId);
-    if (selected) {
-      setFormData((prev) => ({
-        ...prev,
-        patientId,
-      }));
-      // Atualiza o search query com o nome do paciente selecionado
-      setPatientSearchQuery(selected.name);
-    }
+  const handleProcedurePrice = (index: number, value: string) => {
+    setAppointmentItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], price: parseFloat(value) || 0 };
+      return next;
+    });
   };
+
+  // ─── Submit ─────────────────────────────────────────────────────────────────
 
   const isFormValid =
     formData.professionalId &&
     formData.franchiseId &&
     formData.patientId &&
-    formData.startAt &&
-    formData.durationInMinutes &&
-    appointmentItems.length > 0 &&
-    appointmentItems.every((item) => item.procedureId && (isReturnConsultation || item.price > 0));
+    formData.date &&
+    formData.time &&
+    !isPastAppointmentDateTime(formData.date, formData.time) &&
+    formData.durationInMinutes !== "" &&
+    appointmentItems.every(
+      (item) =>
+        item.procedureId && (isReturnConsultation || item.price > 0)
+    );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!isFormValid) {
+  const handleSubmit = async () => {
+    if (!isFormValid) return;
+    if (isPastAppointmentDateTime(formData.date, formData.time)) {
+      toast.error("Escolha um horário futuro para o agendamento.");
       return;
     }
-
-    const payload = {
-      professionalId: formData.professionalId,
-      franchiseId: formData.franchiseId,
-      patientId: formData.patientId,
-      name: formData.name || "Agendamento",
-      appointmentItems: appointmentItems,
-      startAt: new Date(formData.startAt).toISOString(),
-      durationInMinutes: durationMinutes > 0 ? durationMinutes : 30,
-    };
-
+    const startAt = new Date(`${formData.date}T${formData.time}:00`).toISOString();
+    const durationInMinutes = parseInt(formData.durationInMinutes, 10) || 30;
     setIsSubmitting(true);
     try {
-      await createAppointment(payload);
-      toast.success("Agendamento criado com sucesso!");
-
-      // Reset form
-      setFormData({
-        professionalId: "",
-        franchiseId: "",
-        patientId: "",
-        name: "",
-        startAt: "",
-        durationInMinutes: "",
+      await createAppointment({
+        professionalId: formData.professionalId,
+        franchiseId: formData.franchiseId,
+        patientId: formData.patientId,
+        name: "Agendamento",
+        appointmentItems,
+        startAt,
+        durationInMinutes,
       });
-      setAppointmentItems([]);
-      setIsReturnConsultation(false);
-      setPatientSearchQuery("");
+      toast.success("Agendamento criado com sucesso!");
       onClose();
     } catch (error: any) {
-      console.error("Error creating appointment:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Erro ao criar agendamento. Tente novamente.";
-      toast.error(errorMessage);
+      toast.error(
+        error?.response?.data?.message || "Erro ao criar agendamento."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const selectedPatient = patients.find((p) => p.id === formData.patientId);
+  // ─── Derived display values ─────────────────────────────────────────────────
 
-  // Sincronizar searchQuery quando um paciente é selecionado
-  useEffect(() => {
-    if (formData.patientId && selectedPatient) {
-      setPatientSearchQuery(selectedPatient.name);
-    } else if (!formData.patientId) {
-      // Se não há paciente selecionado e o campo está vazio, limpa a busca
-      if (!patientSearchQuery) {
-        setPatientSearchQuery("");
-      }
-    }
-  }, [formData.patientId, selectedPatient]);
+  const selectedFranchise = franchises.find((f) => f.id === formData.franchiseId);
+  const selectedProfessional = professionals.find(
+    (p) => p.id === formData.professionalId
+  );
+  const selectedPatient = patients.find((p) => p.id === formData.patientId);
+  const selectedDateLabel = dateOptions.find(
+    (d) => d.value === formData.date
+  )?.label;
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Criar Novo Agendamento</DialogTitle>
-          <DialogDescription>
-            Preencha todos os dados para agendar uma consulta
-          </DialogDescription>
-        </DialogHeader>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-[480px] flex flex-col p-0 gap-0"
+      >
+        <SheetHeader className="px-6 py-5 border-b border-border shrink-0">
+          <SheetTitle className="text-lg font-semibold">Nova Consulta</SheetTitle>
+        </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Main Fields */}
-          <div className="space-y-4">
-            {/* Franchise - Primeiro campo */}
-            <div className="space-y-2">
-              <Label htmlFor="franchiseId" className="text-foreground font-semibold">
-                Unidade *
-              </Label>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
+          {/* ── Step 1: Unidade ── */}
+          {currentStep > 0 ? (
+            <CompletedStep
+              number={1}
+              label="Unidade"
+              value={selectedFranchise?.name ?? ""}
+              icon={<Building2 className="w-4 h-4" />}
+              onEdit={() => setCurrentStep(0)}
+            />
+          ) : (
+            <ActiveStep
+              number={1}
+              label="Selecione a unidade"
+              icon={<Building2 className="w-4 h-4" />}
+            >
               <Select
                 value={formData.franchiseId}
-                onValueChange={(value) => handleSelectChange("franchiseId", value)}
+                onValueChange={handleFranchiseSelect}
               >
-                <SelectTrigger id="franchiseId" className="bg-white border-border h-10">
+                <SelectTrigger className="h-10 bg-card">
                   <SelectValue placeholder="Selecione uma unidade" />
                 </SelectTrigger>
                 <SelectContent>
                   {isLoadingData ? (
-                    <SelectItem value="loading" disabled>
+                    <SelectItem value="__loading" disabled>
                       Carregando...
                     </SelectItem>
                   ) : (
-                    franchises.map((fran) => (
-                      <SelectItem key={fran.id} value={fran.id}>
-                        {fran.name}
+                    franchises.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.name}
                       </SelectItem>
                     ))
                   )}
                 </SelectContent>
               </Select>
-            </div>
+            </ActiveStep>
+          )}
 
-            {/* Professional - Filtrado por franquia */}
-            <div className="space-y-2">
-              <Label htmlFor="professionalId" className="text-foreground font-semibold">
-                Profissional *
-              </Label>
-              <Select
-                value={formData.professionalId}
-                onValueChange={(value) => handleSelectChange("professionalId", value)}
-                disabled={!formData.franchiseId || isLoadingProfessionals}
+          {/* ── Step 2: Profissional ── */}
+          {currentStep >= 1 &&
+            (lockedProfessionalId ? (
+              <CompletedStep
+                number={2}
+                label="Profissional"
+                value={lockedProfessionalName ?? ""}
+                icon={<UserCheck className="w-4 h-4" />}
+              />
+            ) : currentStep > 1 ? (
+              <CompletedStep
+                number={2}
+                label="Profissional"
+                value={selectedProfessional?.name ?? ""}
+                icon={<UserCheck className="w-4 h-4" />}
+                onEdit={() => setCurrentStep(1)}
+              />
+            ) : (
+              <ActiveStep
+                number={2}
+                label="Selecione o profissional"
+                icon={<UserCheck className="w-4 h-4" />}
               >
-                <SelectTrigger id="professionalId" className="bg-white border-border h-10">
-                  <SelectValue
-                    placeholder={
-                      !formData.franchiseId
-                        ? "Selecione primeiro uma unidade"
-                        : isLoadingProfessionals
-                        ? "Carregando..."
-                        : "Selecione um profissional"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingProfessionals ? (
-                    <SelectItem value="loading" disabled>
-                      Carregando...
-                    </SelectItem>
-                  ) : professionals.length === 0 ? (
-                    <SelectItem value="no-professionals" disabled>
-                      Nenhum profissional encontrado para esta unidade
-                    </SelectItem>
-                  ) : (
-                    professionals.map((prof) => (
-                      <SelectItem key={prof.id} value={prof.id}>
-                        {prof.name || "Sem nome"}
+                <Select
+                  value={formData.professionalId}
+                  onValueChange={handleProfessionalSelect}
+                  disabled={isLoadingProfessionals}
+                >
+                  <SelectTrigger className="h-10 bg-card">
+                    <SelectValue
+                      placeholder={
+                        isLoadingProfessionals
+                          ? "Carregando..."
+                          : "Selecione um profissional"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {professionals.length === 0 ? (
+                      <SelectItem value="__none" disabled>
+                        Nenhum profissional encontrado
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Patient - Input com busca customizada */}
-            <div className="space-y-2 relative">
-              <Label htmlFor="patientId" className="text-foreground font-semibold">
-                Paciente *
-              </Label>
-              <div className="relative">
-                <Input
-                  id="patientId"
-                  placeholder="Digite para buscar paciente..."
-                  value={patientSearchQuery}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setPatientSearchQuery(newValue);
-                    setIsPatientDropdownOpen(true);
-                    // Limpa a seleção quando o usuário digita algo diferente do nome selecionado
-                    if (formData.patientId && selectedPatient && newValue !== selectedPatient.name) {
-                      setFormData((prev) => ({ ...prev, patientId: "" }));
-                    }
-                  }}
-                  onFocus={() => setIsPatientDropdownOpen(true)}
-                  onBlur={() => {
-                    // Delay para permitir clique no item
-                    setTimeout(() => setIsPatientDropdownOpen(false), 200);
-                  }}
-                  className="h-10 bg-white border-border"
-                />
-                {formData.patientId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev) => ({ ...prev, patientId: "" }));
-                      setPatientSearchQuery("");
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <XIcon className="h-4 w-4" />
-                  </button>
-                )}
-                {isPatientDropdownOpen && (patientSearchQuery || filteredPatients.length > 0) && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-                    {filteredPatients.length === 0 ? (
-                      <div className="px-4 py-2 text-sm text-muted-foreground">
-                        {patientSearchQuery ? "Nenhum paciente encontrado" : "Digite para buscar"}
-                      </div>
                     ) : (
-                      filteredPatients.map((patient) => (
+                      professionals.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name ?? "Sem nome"}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </ActiveStep>
+            ))}
+
+          {/* ── Step 3: Paciente ── */}
+          {currentStep >= 2 &&
+            (currentStep > 2 ? (
+              <CompletedStep
+                number={3}
+                label="Paciente"
+                value={selectedPatient?.name ?? patientSearchQuery}
+                icon={<User className="w-4 h-4" />}
+                onEdit={() => setCurrentStep(2)}
+              />
+            ) : (
+              <ActiveStep
+                number={3}
+                label="Selecione o paciente"
+                icon={<User className="w-4 h-4" />}
+              >
+                <div className="relative">
+                  <Input
+                    placeholder="Buscar paciente pelo nome..."
+                    value={patientSearchQuery}
+                    onChange={(e) => {
+                      setPatientSearchQuery(e.target.value);
+                      setIsPatientDropdownOpen(true);
+                      if (formData.patientId) {
+                        setFormData((prev) => ({ ...prev, patientId: "" }));
+                      }
+                    }}
+                    onFocus={() => setIsPatientDropdownOpen(true)}
+                    onBlur={() =>
+                      setTimeout(() => setIsPatientDropdownOpen(false), 200)
+                    }
+                    className="h-10 bg-card"
+                  />
+                  {formData.patientId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, patientId: "" }));
+                        setPatientSearchQuery("");
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <XIcon className="h-4 w-4" />
+                    </button>
+                  )}
+                  {isPatientDropdownOpen && filteredPatients.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-52 overflow-auto">
+                      {filteredPatients.map((patient) => (
                         <button
                           key={patient.id}
                           type="button"
-                          onClick={() => {
-                            handlePatientSelect(patient.id);
-                            setIsPatientDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                          onClick={() => handlePatientSelect(patient.id)}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent transition-colors"
                         >
                           {patient.name}
                         </button>
-                      ))
+                      ))}
+                    </div>
+                  )}
+                  {isPatientDropdownOpen &&
+                    patientSearchQuery &&
+                    filteredPatients.length === 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg px-4 py-3 text-sm text-muted-foreground">
+                        Nenhum paciente encontrado
+                      </div>
+                    )}
+                </div>
+              </ActiveStep>
+            ))}
+
+          {/* ── Step 4: Data e Horário ── */}
+          {currentStep >= 3 &&
+            (currentStep > 3 ? (
+              <CompletedStep
+                number={4}
+                label="Data e Horário"
+                value={`${selectedDateLabel ?? formData.date} às ${formData.time} · ${formData.durationInMinutes}min`}
+                icon={<CalendarDays className="w-4 h-4" />}
+                onEdit={() => setCurrentStep(3)}
+              />
+            ) : (
+              <ActiveStep
+                number={4}
+                label="Data e Horário"
+                icon={<CalendarDays className="w-4 h-4" />}
+              >
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground font-medium">
+                      Data
+                    </Label>
+                    <Select
+                      value={formData.date}
+                      onValueChange={(v) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          date: v,
+                          time: isPastAppointmentDateTime(v, prev.time) ? "" : prev.time,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-10 bg-card">
+                        <SelectValue placeholder="Selecione a data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dateOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground font-medium">
+                      Horário
+                    </Label>
+                    <Select
+                      value={formData.time}
+                      onValueChange={(v) => setFormData((prev) => ({ ...prev, time: v }))}
+                    >
+                      <SelectTrigger className="h-10 bg-card">
+                        <SelectValue placeholder="Selecione o horário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTimeOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                        {availableTimeOptions.length === 0 && (
+                          <SelectItem value="__none" disabled>
+                            Nenhum horário futuro hoje
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground font-medium">
+                      Duração
+                    </Label>
+                    <div className="flex gap-2 flex-wrap items-center">
+                      {["15", "30", "60", "90"].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              durationInMinutes: val,
+                            }))
+                          }
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                            formData.durationInMinutes === val
+                              ? "bg-primary text-white border-primary"
+                              : "bg-card border-border text-foreground hover:bg-accent"
+                          }`}
+                        >
+                          {val === "60" ? "1h" : val === "90" ? "1h30" : `${val}min`}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, durationInMinutes: "0" }))}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          formData.durationInMinutes === "0"
+                            ? "bg-orange-500 text-white border-orange-500"
+                            : "bg-card border-border text-foreground hover:bg-accent"
+                        }`}
+                      >
+                        Sem duração
+                      </button>
+                      <Input
+                        type="number"
+                        min="10"
+                        step="10"
+                        value={formData.durationInMinutes === "0" ? "" : formData.durationInMinutes}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            durationInMinutes: e.target.value,
+                          }))
+                        }
+                        className="h-8 w-20 text-sm bg-card"
+                        placeholder="min"
+                      />
+                    </div>
+                    {formData.durationInMinutes === "0" && (
+                      <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded-md px-3 py-2">
+                        ⚠️ Sem duração definida — podem ocorrer conflitos de agenda.
+                      </p>
                     )}
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* Return Consultation Checkbox */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="returnConsultation"
-                checked={isReturnConsultation}
-                onCheckedChange={(checked) => setIsReturnConsultation(checked === true)}
-              />
-              <Label
-                htmlFor="returnConsultation"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                Consulta de retorno
-              </Label>
-            </div>
-
-            {/* Appointment Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-foreground font-semibold">
-                Título do Agendamento *
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="e.g., Consulta de Rotina"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="h-10 bg-white border-border"
-              />
-            </div>
-
-            {/* Start Date/Time */}
-            <div className="space-y-2">
-              <Label htmlFor="startAt" className="text-foreground font-semibold">
-                Data e Hora *
-              </Label>
-              <Input
-                id="startAt"
-                name="startAt"
-                type="datetime-local"
-                value={formData.startAt}
-                onChange={handleInputChange}
-                className="h-10 bg-white border-border"
-              />
-            </div>
-
-            {/* Duration */}
-            <div className="space-y-2">
-              <Label htmlFor="durationInMinutes" className="text-foreground font-semibold">
-                Duração (minutos) *
-              </Label>
-              <Input
-                id="durationInMinutes"
-                name="durationInMinutes"
-                type="number"
-                placeholder="e.g., 30"
-                min="15"
-                step="15"
-                value={formData.durationInMinutes}
-                onChange={handleInputChange}
-                className="h-10 bg-white border-border"
-              />
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData((prev) => ({ ...prev, durationInMinutes: "30" }))}
-                  className="text-xs h-8"
-                >
-                  30m
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData((prev) => ({ ...prev, durationInMinutes: "60" }))}
-                  className="text-xs h-8"
-                >
-                  1h
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData((prev) => ({ ...prev, durationInMinutes: "90" }))}
-                  className="text-xs h-8"
-                >
-                  1:30h
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Appointment Items Section */}
-          <div className="border-t border-border pt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">Procedimentos</h3>
-              <Button
-                type="button"
-                onClick={handleAddProcedure}
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-white text-xs"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Adicionar Procedimento
-              </Button>
-            </div>
-
-            {appointmentItems.length === 0 && (
-              <div className="text-center py-6 bg-secondary/50 rounded-lg border border-dashed border-border">
-                <p className="text-sm text-muted-foreground">
-                  Nenhum procedimento adicionado. Clique em "Adicionar Procedimento" para começar.
-                </p>
-              </div>
-            )}
-
-            {appointmentItems.map((item, index) => (
-              <div
-                key={index}
-                className="border border-border rounded-lg p-4 space-y-3 bg-secondary/20"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-foreground">
-                    Procedimento {index + 1}
-                  </span>
                   <Button
                     type="button"
-                    onClick={() => handleRemoveProcedure(index)}
-                    size="sm"
-                    variant="ghost"
-                    className="text-red-600 hover:bg-red-50"
+                    onClick={handleDateTimeConfirm}
+                    disabled={
+                      !formData.date ||
+                      !formData.time ||
+                      !formData.durationInMinutes ||
+                      isPastAppointmentDateTime(formData.date, formData.time)
+                    }
+                    className="w-full mt-1"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    Confirmar
                   </Button>
                 </div>
-
-                {/* Procedure Select */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-foreground font-medium">
-                    Procedimento *
-                  </Label>
-                  <Select
-                    value={item.procedureId}
-                    onValueChange={(value) => handleProcedureSelect(index, value)}
-                  >
-                    <SelectTrigger className="bg-white border-border h-10">
-                      <SelectValue placeholder="Selecione um procedimento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {procedures.length === 0 ? (
-                        <SelectItem value="no-procedures" disabled>
-                          Nenhum procedimento cadastrado
-                        </SelectItem>
-                      ) : (
-                        procedures.map((proc) => (
-                          <SelectItem key={proc.id} value={proc.id}>
-                            {proc.name} - R${" "}
-                            {typeof proc.price === "string"
-                              ? parseFloat(proc.price).toFixed(2)
-                              : proc.price.toFixed(2)}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Price */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-foreground font-medium">
-                    Preço (R$) * {isReturnConsultation && "(Consulta de retorno - R$ 0,00)"}
-                  </Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={item.price || ""}
-                    onChange={(e) =>
-                      handleItemChange(
-                        index,
-                        "price",
-                        e.target.value ? parseFloat(e.target.value) : 0
-                      )
-                    }
-                    disabled={isReturnConsultation}
-                    className="h-10 bg-white border-border"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-foreground font-medium">
-                    Observações (Opcional)
-                  </Label>
-                  <textarea
-                    placeholder="Adicione observações sobre este procedimento..."
-                    value={item.notes || ""}
-                    onChange={(e) => handleItemChange(index, "notes", e.target.value)}
-                    className="w-full border border-border rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                    rows={2}
-                  />
-                </div>
-              </div>
+              </ActiveStep>
             ))}
-          </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-border">
-            <Button
-              type="button"
-              onClick={onClose}
-              variant="outline"
-              className="flex-1 border-border"
+          {/* ── Step 5: Procedimentos ── */}
+          {currentStep >= 4 && (
+            <ActiveStep
+              number={5}
+              label="Procedimentos"
+              icon={<Stethoscope className="w-4 h-4" />}
             >
-              Cancelar
-            </Button>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="returnConsultation"
+                    checked={isReturnConsultation}
+                    onCheckedChange={(checked) =>
+                      setIsReturnConsultation(checked === true)
+                    }
+                  />
+                  <Label
+                    htmlFor="returnConsultation"
+                    className="text-sm cursor-pointer leading-none"
+                  >
+                    Consulta de retorno (sem cobrança)
+                  </Label>
+                </div>
+
+                {appointmentItems.map((item, index) => (
+                  <div
+                    key={index}
+                    className="border border-border rounded-xl p-3 space-y-2.5 bg-secondary/20"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">
+                        Procedimento {index + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveProcedure(index)}
+                        className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <Select
+                      value={item.procedureId}
+                      onValueChange={(v) => handleProcedureSelect(index, v)}
+                    >
+                      <SelectTrigger className="h-9 bg-card text-sm">
+                        <SelectValue placeholder="Selecione um procedimento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {procedures
+                          .filter(
+                            (proc) =>
+                              proc.id === item.procedureId ||
+                              !appointmentItems.some(
+                                (other, i) => i !== index && other.procedureId === proc.id
+                              )
+                          )
+                          .map((proc) => (
+                            <SelectItem key={proc.id} value={proc.id}>
+                              {proc.name} — R${" "}
+                              {typeof proc.price === "string"
+                                ? parseFloat(proc.price).toFixed(2)
+                                : proc.price.toFixed(2)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    {!isReturnConsultation && (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Preço (R$)"
+                        value={item.price || ""}
+                        onChange={(e) =>
+                          handleProcedurePrice(index, e.target.value)
+                        }
+                        className="h-9 bg-card text-sm"
+                      />
+                    )}
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddProcedure}
+                  className="w-full border-dashed"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Procedimento
+                </Button>
+              </div>
+            </ActiveStep>
+          )}
+        </div>
+
+        {/* ── Footer: submit button ── */}
+        {currentStep >= 4 && (
+          <div className="px-6 py-4 border-t border-border shrink-0">
             <Button
-              type="submit"
+              onClick={handleSubmit}
               disabled={isSubmitting || !isFormValid}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white disabled:opacity-50"
+              className="w-full bg-primary hover:bg-primary/90 text-white disabled:opacity-50"
             >
               {isSubmitting ? "Criando..." : "Criar Agendamento"}
             </Button>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function CompletedStep({
+  number,
+  label,
+  value,
+  icon,
+  onEdit,
+}: {
+  number: number;
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  onEdit?: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-xl">
+      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white shrink-0">
+        <Check className="w-3 h-3" />
+      </div>
+      <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
+        {icon}
+        <span className="text-xs font-medium">{label}</span>
+      </div>
+      <span className="flex-1 text-sm font-semibold text-foreground truncate">
+        {value}
+      </span>
+      {onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors shrink-0"
+          title="Editar"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ActiveStep({
+  number,
+  label,
+  icon,
+  children,
+}: {
+  number: number;
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-card border-2 border-primary/30 rounded-xl p-4 space-y-3 shadow-sm">
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold shrink-0">
+          {number}
+        </div>
+        <div className="flex items-center gap-2 text-foreground">
+          {icon}
+          <span className="font-semibold text-sm">{label}</span>
+        </div>
+      </div>
+      {children}
+    </div>
   );
 }

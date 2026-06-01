@@ -10,22 +10,22 @@ import {
   Users,
   UserCheck,
   Syringe,
-  Receipt,
   Stethoscope,
   CalendarCheck,
+  Package,
 } from "lucide-react";
 
-export type ClinicRoleType = "OWNER" | "ADMIN" | "PROFESSIONAL" | "PATIENT";
+export type ClinicRoleType = "OWNER" | "ADMIN" | "PROFESSIONAL" | "PATIENT" | "COLLABORATOR";
 
 export type PortalSegment = "dashboard" | "professional" | "patient";
 
 export interface MenuItem {
   icon: LucideIcon;
   label: string;
-  path: string; // relative to portal root, e.g. "/dashboard", "/professional"
+  path: string;
 }
 
-/** Base path for each portal (no leading slash in config; tenant is prepended in navigation) */
+/** Base path for each portal */
 export const PORTAL_BASE: Record<PortalSegment, string> = {
   dashboard: "/dashboard",
   professional: "/professional",
@@ -39,13 +39,14 @@ export function getPortalBaseForRole(role: ClinicRoleType): string {
   switch (role) {
     case "OWNER":
     case "ADMIN":
+    case "COLLABORATOR":
       return PORTAL_BASE.dashboard;
     case "PROFESSIONAL":
-      return "/professional/appointments";
+      return "/professional";
     case "PATIENT":
-      return "/patient/appointments";
+      return "/patient";
     default:
-      return "/patient/appointments";
+      return "/patient";
   }
 }
 
@@ -61,10 +62,10 @@ export function getPortalSegmentFromPath(pathWithoutTenant: string): PortalSegme
 
 /**
  * Can this role access this portal?
- * ADMIN/OWNER can access all portals.
  */
 export function canAccessPortal(role: ClinicRoleType, portal: PortalSegment): boolean {
   if (role === "OWNER" || role === "ADMIN") return true;
+  if (role === "COLLABORATOR") return portal === "dashboard";
   if (portal === "dashboard") return false;
   if (portal === "professional") return role === "PROFESSIONAL";
   if (portal === "patient") return role === "PATIENT";
@@ -73,26 +74,31 @@ export function canAccessPortal(role: ClinicRoleType, portal: PortalSegment): bo
 
 /** Menu items for admin/owner: full dashboard */
 const MENU_DASHBOARD: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Painel", path: "/dashboard" },
+  { icon: LayoutDashboard, label: "Painel",         path: "/dashboard" },
+  { icon: Calendar,        label: "Consultas",       path: "/dashboard/appointments" },
+  { icon: Users,           label: "Pacientes",       path: "/dashboard/patients" },
+  { icon: UserCheck,       label: "Profissionais",   path: "/dashboard/professionals" },
+  { icon: Syringe,         label: "Procedimentos",   path: "/dashboard/procedures" },
+  { icon: Package,         label: "Insumos",         path: "/dashboard/inventory" },
+];
+
+/** Menu items for collaborator (receptionist): patients + appointments only */
+const MENU_COLLABORATOR: MenuItem[] = [
   { icon: Calendar, label: "Consultas", path: "/dashboard/appointments" },
-  { icon: Users, label: "Pacientes", path: "/dashboard/patients" },
-  { icon: UserCheck, label: "Profissionais", path: "/dashboard/professionals" },
-  { icon: Syringe, label: "Procedimentos", path: "/dashboard/procedures" },
-  { icon: Receipt, label: "Faturamento", path: "/dashboard/billing" },
+  { icon: Users,    label: "Pacientes", path: "/dashboard/patients" },
 ];
 
-/** Menu items for professional - Agendamentos (pacientes que atendeu) é a tela principal */
+/** Menu items for professional */
 const MENU_PROFESSIONAL: MenuItem[] = [
-  { icon: CalendarCheck, label: "Agendamentos", path: "/professional/appointments" },
-  { icon: LayoutDashboard, label: "Painel", path: "/professional" },
-  { icon: Users, label: "Pacientes", path: "/professional/patients" },
-  // { icon: Syringe, label: "Procedimentos", path: "/professional/procedures" },
+  { icon: CalendarCheck, label: "Home",     path: "/professional" },
+  { icon: Calendar,      label: "Consultas", path: "/professional/appointments" },
+  { icon: Stethoscope,   label: "Perfil",   path: "/professional/profile" },
 ];
 
-/** Menu items for patient - mesma tela de consultas do dashboard */
+/** Menu items for patient */
 const MENU_PATIENT: MenuItem[] = [
-  // { icon: Stethoscope, label: "Início", path: "/patient" },
-  { icon: Calendar, label: "Consultas", path: "/patient/appointments" },
+  { icon: Calendar,    label: "Home",  path: "/patient" },
+  { icon: Stethoscope, label: "Perfil", path: "/patient/profile" },
 ];
 
 export function getMenuByRole(role: ClinicRoleType): MenuItem[] {
@@ -100,6 +106,8 @@ export function getMenuByRole(role: ClinicRoleType): MenuItem[] {
     case "OWNER":
     case "ADMIN":
       return MENU_DASHBOARD;
+    case "COLLABORATOR":
+      return MENU_COLLABORATOR;
     case "PROFESSIONAL":
       return MENU_PROFESSIONAL;
     case "PATIENT":

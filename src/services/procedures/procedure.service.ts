@@ -11,6 +11,11 @@ export async function getProceduresByClinicId(clinicId: string) {
   return response.data;
 }
 
+export async function getProceduresByFranchiseId(franchiseId: string) {
+  const response = await api.get(`/franchises/${franchiseId}/procedures`);
+  return response.data;
+}
+
 export async function getProcedureById(procedureId: string) {
   const response = await api.get(`/procedures/${procedureId}`);
   return response.data;

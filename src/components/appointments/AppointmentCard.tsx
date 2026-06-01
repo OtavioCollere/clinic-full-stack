@@ -1,8 +1,13 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { CalendarDays, Clock3, Eye, Pencil } from "lucide-react";
 import type { AppointmentDisplay } from "./appointment-utils";
-import { getStatusColor, getStatusLabel, getStatusAccentBorder } from "./appointment-utils";
+import {
+  formatDateCard,
+  getStatusAccentBorder,
+  getStatusColor,
+  getStatusLabel,
+} from "./appointment-utils";
 
 export type AppointmentCardVariant = "admin" | "patient";
 
@@ -12,6 +17,7 @@ interface AppointmentCardProps {
   onClick?: () => void;
   onViewDetails?: (e: React.MouseEvent) => void;
   onEdit?: (e: React.MouseEvent) => void;
+  onConfirmConsultation?: (e: React.MouseEvent) => void;
 }
 
 export function AppointmentCard({
@@ -20,75 +26,114 @@ export function AppointmentCard({
   onClick,
   onViewDetails,
   onEdit,
+  onConfirmConsultation,
 }: AppointmentCardProps) {
-  const showPatientLine = variant === "admin" && appointment.appointmentName !== appointment.patientName;
   const showEditButton = variant === "admin" && onEdit;
+  const showConfirmButton = variant === "admin" && onConfirmConsultation;
   const statusBorder = getStatusAccentBorder(appointment.status);
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: the card contains nested action buttons, so it cannot be a native button.
     <div
-      role={onClick ? "button" : undefined}
-      className={`bg-white rounded-lg border border-border border-l-4 p-5 shadow-sm hover:shadow-lg transition-all cursor-pointer hover:border-primary/50 ${statusBorder}`}
+      role="button"
+      tabIndex={onClick ? 0 : undefined}
+      className={`group rounded-xl border border-border border-l-4 bg-card px-4 py-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md sm:px-5 ${
+        onClick ? "cursor-pointer" : ""
+      } ${statusBorder}`}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground text-base mb-1">
-            {appointment.appointmentName}
-          </h3>
-          {showPatientLine && (
-            <p className="text-sm text-muted-foreground mb-1">{appointment.patientName}</p>
+      <div className="grid gap-4 sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center">
+        <div className="flex items-center gap-3 sm:block sm:text-center">
+          <div className="flex h-12 min-w-20 items-center justify-center rounded-lg bg-primary/10 px-3 sm:h-auto sm:min-w-0 sm:bg-transparent sm:px-0">
+            <p className="text-2xl font-bold leading-none text-foreground tabular-nums sm:text-3xl">
+              {appointment.time}
+            </p>
+          </div>
+
+          <div className="space-y-1 sm:mt-2">
+            <p className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground sm:justify-center">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {formatDateCard(appointment.date)}
+            </p>
+            <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground sm:justify-center">
+              <Clock3 className="h-3.5 w-3.5" />
+              {appointment.duration}
+            </p>
+          </div>
+        </div>
+
+        <div className="min-w-0 border-border sm:border-l sm:pl-5">
+          <p className="text-lg font-semibold leading-snug text-foreground">
+            {appointment.patientName}
+          </p>
+          <p className="mt-1 text-[15px] leading-6 text-muted-foreground">
+            {appointment.professionalName}
+          </p>
+          {appointment.appointmentName && (
+            <p className="mt-1 line-clamp-2 text-[15px] font-medium leading-6 text-foreground/80">
+              {appointment.appointmentName}
+            </p>
           )}
         </div>
-        <span
-          className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap ring-1 ring-current/20 ${getStatusColor(
-            appointment.status
-          )}`}
-        >
-          {getStatusLabel(appointment.status)}
-        </span>
-      </div>
-      <div className="space-y-2 mb-4">
-        {variant === "admin" && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Paciente:</span>
-            <span className="font-medium text-foreground">{appointment.patientName}</span>
-          </div>
-        )}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Profissional:</span>
-          <span className="font-medium text-foreground">{appointment.professionalName}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Horário:</span>
-          <span className="font-medium text-foreground">{appointment.time}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Duração:</span>
-          <span className="font-medium text-foreground">{appointment.duration}</span>
-        </div>
-      </div>
-      {(onViewDetails || showEditButton) && (
-        <div className="pt-3 border-t border-border flex gap-2" onClick={(e) => e.stopPropagation()}>
+
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <span
+            className={`rounded-md px-3 py-1.5 text-sm font-semibold whitespace-nowrap ring-1 ring-current/20 ${getStatusColor(
+              appointment.status,
+            )}`}
+          >
+            {getStatusLabel(appointment.status)}
+          </span>
+
+          {showConfirmButton && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onConfirmConsultation(event);
+              }}
+              className="rounded-md border border-primary/20 px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+            >
+              Confirmar
+            </button>
+          )}
+
           {onViewDetails && (
             <button
-              onClick={onViewDetails}
-              className="flex-1 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded transition-colors"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onViewDetails(event);
+              }}
+              className="rounded-md border border-border p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              title="Ver detalhes"
             >
-              Ver Detalhes
+              <Eye className="h-5 w-5" />
             </button>
           )}
+
           {showEditButton && (
             <button
-              onClick={onEdit}
-              className="px-3 py-2 text-sm font-medium text-foreground hover:bg-secondary rounded transition-colors border border-border"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit(event);
+              }}
+              className="rounded-md border border-border p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               title="Editar agendamento"
             >
-              <Pencil className="w-4 h-4" />
+              <Pencil className="h-5 w-5" />
             </button>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

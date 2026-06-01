@@ -2,9 +2,11 @@
 
 import { AppLayout } from "./app-layout";
 import { ProtectedRoute } from "./protected-route";
+import AnamnesisGate from "@/app/[tenant]/_components/anamnese-gate";
 import { getMenuByRole, type ClinicRoleType, type PortalSegment } from "@/lib/portal";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTenant } from "@/hooks/use-tenant";
+import { FranchiseProvider } from "@/context/FranchiseContext";
 
 interface PortalLayoutProps {
   children: React.ReactNode;
@@ -41,13 +43,16 @@ function PortalLayoutInner({
   const menuItems = getMenuByRole(role);
 
   return (
-    <AppLayout
-      menuItems={menuItems}
-      tenant={tenant}
-      userName={user?.name ?? null}
-      clinicName={undefined}
-    >
-      {children}
-    </AppLayout>
+    <FranchiseProvider clinicId={user?.clinicId ?? null}>
+      <AppLayout
+        menuItems={menuItems}
+        tenant={tenant}
+        userName={user?.name ?? null}
+        clinicName={undefined}
+      >
+        {portal === "patient" && <AnamnesisGate isOpen={true} />}
+        {children}
+      </AppLayout>
+    </FranchiseProvider>
   );
 }

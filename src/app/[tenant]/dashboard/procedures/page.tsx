@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import DashboardLayout from "../_components/dashboard-layout";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuthContext } from "@/context/AuthContext";
 import { createTenantLink } from "@/lib/tenant-navigation";
-import { getProceduresByClinicId } from "@/services/procedures/procedure.service";
+import { getProceduresByClinicId, getProceduresByFranchiseId } from "@/services/procedures/procedure.service";
+import { getFranchises } from "@/services/franchise/franchise.service";
 import { toast } from "sonner";
 
 interface Procedure {
@@ -20,12 +21,27 @@ interface Procedure {
   status: string;
 }
 
+interface Franchise {
+  id: string;
+  name: string;
+}
+
 export default function ProceduresPage() {
   const router = useRouter();
   const { user } = useAuthContext();
   const tenant = useTenant();
   const [procedures, setProcedures] = useState<Procedure[]>([]);
+  const [franchises, setFranchises] = useState<Franchise[]>([]);
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.clinicId) return;
+
+    getFranchises(user.clinicId as string)
+      .then((data) => setFranchises(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [user?.clinicId]);
 
   useEffect(() => {
     if (!user?.clinicId) return;
@@ -33,7 +49,9 @@ export default function ProceduresPage() {
     const fetchProcedures = async () => {
       try {
         setIsLoading(true);
-        const response = await getProceduresByClinicId(user.clinicId as string);
+        const response = selectedFranchiseId === "all"
+          ? await getProceduresByClinicId(user.clinicId as string)
+          : await getProceduresByFranchiseId(selectedFranchiseId);
         setProcedures(Array.isArray(response) ? response : []);
       } catch (error) {
         console.error("Erro ao buscar procedimentos:", error);
@@ -45,10 +63,9 @@ export default function ProceduresPage() {
     };
 
     fetchProcedures();
-  }, [user?.clinicId]);
+  }, [user?.clinicId, selectedFranchiseId]);
 
   const handleDelete = (id: string) => {
-    // TODO: Implement delete functionality
     console.log("Deleting procedure:", id);
   };
 
@@ -58,44 +75,66 @@ export default function ProceduresPage() {
   };
 
   return (
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Procedimentos</h1>
-            <p className="text-muted-foreground">Gerencie os procedimentos e preços da sua clínica</p>
-          </div>
-          <Button
-            onClick={() => router.push(createTenantLink(tenant, "/dashboard/procedures/create"))}
-            className="bg-primary hover:bg-primary/90 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar Procedimento
-          </Button>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Procedimentos</h1>
+          <p className="text-muted-foreground">Gerencie os procedimentos e preços da sua clínica</p>
         </div>
+        <Button
+          onClick={() => router.push(createTenantLink(tenant, "/dashboard/procedures/create"))}
+          className="bg-primary hover:bg-primary/90 text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Adicionar Procedimento
+        </Button>
+      </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Carregando procedimentos...</p>
-          </div>
-        )}
+      {/* Franchise Filter */}
+      {franchises.length > 0 && (
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Filtrar por unidade:</span>
+          <Select value={selectedFranchiseId} onValueChange={setSelectedFranchiseId}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Todas as unidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as unidades</SelectItem>
+              {franchises.map((franchise) => (
+                <SelectItem key={franchise.id} value={franchise.id}>
+                  {franchise.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
-        {/* Procedures Grid */}
-        {!isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {procedures.map((procedure) => (
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Carregando procedimentos...</p>
+        </div>
+      )}
+
+      {/* Procedures Grid */}
+      {!isLoading && procedures.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {procedures.map((procedure) => (
             <div
               key={procedure.id}
-              className="bg-white rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-card rounded-lg border border-border p-6 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="mb-4">
                 <h3 className="font-semibold text-foreground text-lg mb-2">
                   {procedure.name}
                 </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {procedure.notes}
-                </p>
+                {procedure.notes && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {procedure.notes}
+                  </p>
+                )}
               </div>
 
               <div className="mb-6">
@@ -112,7 +151,7 @@ export default function ProceduresPage() {
                     e.stopPropagation();
                     handleEdit(procedure.id);
                   }}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Editar</span>
@@ -124,7 +163,7 @@ export default function ProceduresPage() {
                     e.stopPropagation();
                     handleDelete(procedure.id);
                   }}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Excluir</span>
@@ -132,28 +171,33 @@ export default function ProceduresPage() {
               </div>
             </div>
           ))}
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* Empty State */}
-        {!isLoading && procedures.length === 0 && (
-          <div className="bg-white rounded-xl border border-dashed border-border p-12 text-center">
-            <div className="text-muted-foreground mb-3 opacity-50">
-              <Trash2 className="w-12 h-12 mx-auto" />
-            </div>
-            <p className="text-foreground font-medium mb-2">Ainda não há procedimentos</p>
-            <p className="text-sm text-muted-foreground mb-6">
-              Crie seu primeiro procedimento para começar
-            </p>
-            <Button
-              onClick={() => router.push(createTenantLink(tenant, "/dashboard/procedures/create"))}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
-              Adicionar Procedimento
-            </Button>
+      {/* Empty State */}
+      {!isLoading && procedures.length === 0 && (
+        <div className="bg-card rounded-xl border border-dashed border-border p-12 text-center">
+          <div className="text-muted-foreground mb-3 opacity-50">
+            <Trash2 className="w-12 h-12 mx-auto" />
           </div>
-        )}
-      </div>
- 
+          <p className="text-foreground font-medium mb-2">
+            {selectedFranchiseId === "all"
+              ? "Ainda não há procedimentos"
+              : "Nenhum procedimento nesta unidade"}
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            {selectedFranchiseId === "all"
+              ? "Crie seu primeiro procedimento para começar"
+              : "Adicione um procedimento ou selecione outra unidade"}
+          </p>
+          <Button
+            onClick={() => router.push(createTenantLink(tenant, "/dashboard/procedures/create"))}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            Adicionar Procedimento
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

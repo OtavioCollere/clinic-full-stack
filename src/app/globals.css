@@ -9,8 +9,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-jakarta);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,79 +50,328 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #0B1220;
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: #0B1220;
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #0B1220;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.30 0.12 270);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.32 0.12 270);
-  --sidebar-ring: oklch(0.35 0.15 270);
-}
+  --radius: 0.5rem;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.40 0.15 270);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.25 0.12 270);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.35 0.15 270);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.30 0.12 270);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.32 0.12 270);
-  --sidebar-ring: oklch(0.35 0.15 270);
+  /* ---------- Sidebar ---------- */
+  --sidebar-bg-base: #080b1a;
+  --sidebar-bg-deep: #050812;
+  --sidebar-glow-color: rgba(124, 58, 237, 0.1);
+  --sidebar-bg-with-glow:
+    radial-gradient(
+      ellipse at 90% 0%,
+      var(--sidebar-glow-color),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 20% 100%,
+      rgba(124, 58, 237, 0.05),
+      transparent 45%
+    ),
+    linear-gradient(
+      180deg,
+      var(--sidebar-bg-base) 0%,
+      var(--sidebar-bg-deep) 100%
+    );
+
+  /* ---------- Header ---------- */
+  --header-bg-gradient: linear-gradient(to right, #080b1a 0%, #0a0e22 100%);
+  --header-glow: none;
+
+  /* ---------- Brand ---------- */
+  --brand-primary: #7c3aed;
+  --brand-primary-hover: #6d28d9;
+  --brand-accent: #7c3aed;
+  --brand-accent-glow: rgba(124, 58, 237, 0.15);
+
+  /* ---------- shadcn tokens ---------- */
+  --background: #f4f5f7;
+  --foreground: #111114;
+  --card: #ffffff;
+  --card-foreground: #111114;
+  --popover: #ffffff;
+  --popover-foreground: #111114;
+  --primary: var(--brand-primary);
+  --primary-foreground: #ffffff;
+  --secondary: #f0f1f3;
+  --secondary-foreground: #111114;
+  --muted: #f0f1f3;
+  --muted-foreground: #6b7280;
+  --accent: #f0f1f3;
+  --accent-foreground: #111114;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: var(--brand-primary);
+  --chart-1: oklch(0.55 0.22 264);
+  --chart-2: oklch(0.65 0.14 210);
+  --chart-3: oklch(0.75 0.1 220);
+  --chart-4: oklch(0.9 0.23 128);
+  --chart-5: oklch(0.65 0.2 240);
+
+  /* ---------- Sidebar tokens ---------- */
+  --sidebar: var(--sidebar-bg-base);
+  --sidebar-foreground: rgba(255, 255, 255, 0.9);
+  --sidebar-primary: var(--brand-primary);
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-ring: var(--brand-primary);
+
+  --page-bg: #f4f5f7;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    font-size: 16px;
+    text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-size: 15px;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    font-synthesis-weight: none;
+  }
+}
+
+@layer components {
+  .clinic-calendar-shell {
+    min-height: 560px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    box-shadow: 0 1px 2px rgba(17, 17, 20, 0.04);
+  }
+
+  .clinic-calendar-shell .fc {
+    --fc-border-color: rgba(17, 17, 20, 0.08);
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: #f7f8fa;
+    --fc-today-bg-color: rgba(124, 58, 237, 0.09);
+    --fc-now-indicator-color: #ef4444;
+    color: var(--foreground);
+    font-family: var(--font-jakarta), sans-serif;
+  }
+
+  .clinic-calendar-shell .fc .fc-toolbar {
+    gap: 12px;
+    margin: 0;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+  }
+
+  .clinic-calendar-shell .fc .fc-toolbar-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: capitalize;
+  }
+
+  .clinic-calendar-shell .fc .fc-button {
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    box-shadow: none;
+    text-transform: capitalize;
+  }
+
+  .clinic-calendar-shell .fc .fc-button:hover,
+  .clinic-calendar-shell .fc .fc-button:focus {
+    border-color: rgba(124, 58, 237, 0.35);
+    background: rgba(124, 58, 237, 0.08);
+    color: var(--foreground);
+    box-shadow: none;
+  }
+
+  .clinic-calendar-shell
+    .fc
+    .fc-button-primary:not(:disabled).fc-button-active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .clinic-calendar-shell .fc .fc-scrollgrid {
+    border: 0;
+  }
+
+  .clinic-calendar-shell .fc .fc-col-header-cell {
+    background: #fafafa;
+  }
+
+  .clinic-calendar-shell .fc .fc-col-header-cell-cushion {
+    padding: 10px 6px;
+    color: #3f3f46;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .clinic-calendar-shell .fc .fc-day-today .fc-col-header-cell-cushion,
+  .clinic-calendar-shell .fc .fc-timegrid-col.fc-day-today {
+    color: var(--primary);
+  }
+
+  .clinic-calendar-shell .fc .fc-timegrid-axis,
+  .clinic-calendar-shell .fc .fc-timegrid-slot-label {
+    background: #fff;
+  }
+
+  .clinic-calendar-shell .fc .fc-timegrid-slot-label-cushion {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .clinic-calendar-shell .fc .fc-timegrid-slot {
+    height: 42px;
+  }
+
+  .clinic-calendar-shell .fc .fc-timegrid-slot-minor {
+    border-top-style: dashed;
+  }
+
+  .clinic-calendar-shell .fc .fc-highlight {
+    background: rgba(124, 58, 237, 0.14);
+  }
+
+  .clinic-calendar-shell .fc .fc-timegrid-now-indicator-line {
+    border-width: 2px;
+  }
+
+  .clinic-calendar-shell .fc .fc-timegrid-now-indicator-arrow {
+    border-color: #ef4444;
+  }
+
+  .clinic-calendar-shell .fc .fc-event {
+    cursor: pointer;
+  }
+
+  .clinic-calendar-shell .fc .clinic-calendar-event {
+    overflow: hidden;
+    border: 0;
+    border-left: 4px solid transparent;
+    border-radius: 7px;
+    box-shadow: 0 1px 2px rgba(17, 17, 20, 0.12);
+  }
+
+  .clinic-calendar-shell .fc .clinic-calendar-event .fc-event-main {
+    color: inherit;
+  }
+
+  .clinic-calendar-event-content {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 7px;
+    line-height: 1.15;
+  }
+
+  .clinic-calendar-event-time,
+  .clinic-calendar-event-meta {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    opacity: 0.88;
+  }
+
+  .clinic-calendar-event-title {
+    overflow: hidden;
+    color: currentColor;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .clinic-calendar-event-meta span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .clinic-calendar-shell .fc .clinic-calendar-event--waiting {
+    border-left-color: #b45309;
+    background: #f59e0b;
+    color: #271500;
+  }
+
+  .clinic-calendar-shell .fc .clinic-calendar-event--confirmed {
+    border-left-color: #047857;
+    background: #059669;
+    color: #fff;
+  }
+
+  .clinic-calendar-shell .fc .clinic-calendar-event--done {
+    border-left-color: #475569;
+    background: #64748b;
+    color: #fff;
+  }
+
+  .clinic-calendar-shell .fc .clinic-calendar-event--canceled {
+    border-left-color: #b91c1c;
+    background: #ef4444;
+    color: #fff;
+    opacity: 0.78;
+  }
+
+  .clinic-calendar-shell .fc .fc-daygrid-event {
+    margin: 2px 4px;
+  }
+
+  .clinic-calendar-shell .fc .fc-daygrid-day-number {
+    color: #3f3f46;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .clinic-calendar-shell .fc .fc-day-today .fc-daygrid-day-number {
+    display: inline-flex;
+    min-width: 28px;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .clinic-calendar-shell {
+      min-height: 520px;
+      border-radius: var(--radius-lg);
+    }
+
+    .clinic-calendar-shell .fc .fc-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .clinic-calendar-shell .fc .fc-toolbar-chunk {
+      display: flex;
+      justify-content: center;
+    }
+
+    .clinic-calendar-shell .fc .fc-button {
+      height: 32px;
+      padding: 0 9px;
+      font-size: 0.75rem;
+    }
   }
 }
