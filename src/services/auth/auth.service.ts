@@ -50,6 +50,11 @@ export async function logoutUser() {
   return response.data;
 }
 
+export async function editMyUser(data: { name?: string; email?: string }) {
+  const response = await api.patch(`${baseUrl}/me`, data);
+  return response.data as { name: string; email: string };
+}
+
 export async function changePasswordAuthenticated(
   currentPassword: string,
   newPassword: string

@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getMyPatient, editPatient } from "@/services/patients/patients.service";
+import { editMyUser } from "@/services/auth/auth.service";
 import {
   getAnamnesisByPatientId,
   type AnamnesisResponse,
@@ -232,7 +233,7 @@ function AnamnesisDisplay({
 }
 
 export default function PatientProfilePage() {
-  const { user, loading: authLoading } = useAuthContext();
+  const { user, setUser, loading: authLoading } = useAuthContext();
   const [userInfo, setUserInfo] = useState({
     name: "",
     email: "",
@@ -259,6 +260,7 @@ export default function PatientProfilePage() {
     zipCode: "",
   });
   const [isSavingPatient, setIsSavingPatient] = useState(false);
+  const [isSavingUser, setIsSavingUser] = useState(false);
 
   const patientId = user?.patientId;
 
@@ -328,14 +330,22 @@ export default function PatientProfilePage() {
     fetchAnamnesis();
   }, [patientId]);
 
-  const handleSaveUserInfo = () => {
-    setUserInfo((prev) => ({
-      ...prev,
-      name: userFormData.name,
-      email: userFormData.email,
-    }));
-    setShowUserEditModal(false);
-    toast.info("Edição de dados do usuário em breve.");
+  const handleSaveUserInfo = async () => {
+    setIsSavingUser(true);
+    try {
+      const updated = await editMyUser({
+        name: userFormData.name,
+        email: userFormData.email,
+      });
+      setUserInfo((prev) => ({ ...prev, name: updated.name, email: updated.email }));
+      if (user) setUser({ ...user, name: updated.name, email: updated.email });
+      setShowUserEditModal(false);
+      toast.success("Dados atualizados com sucesso!");
+    } catch {
+      toast.error("Erro ao atualizar dados. Tente novamente.");
+    } finally {
+      setIsSavingUser(false);
+    }
   };
 
   const handleSavePatientInfo = async () => {
@@ -535,7 +545,9 @@ export default function PatientProfilePage() {
             <Button variant="outline" onClick={() => setShowUserEditModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveUserInfo}>Salvar</Button>
+            <Button onClick={handleSaveUserInfo} disabled={isSavingUser}>
+              {isSavingUser ? "Salvando..." : "Salvar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
