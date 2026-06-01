@@ -25,7 +25,6 @@ import { getProceduresByClinicId } from "@/services/procedures/procedure.service
 import { createServiceOrder, type PaymentMethod } from "@/services/service-order/service-order.service";
 import type { Appointment } from "@/services/appointments/appointment.service";
 import { toast } from "sonner";
-import ConsumptionConfirmModal from "./consumption-confirm-modal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -73,7 +72,6 @@ export default function CreateServiceOrderModal({
   const { user } = useAuthContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingProcedures, setIsLoadingProcedures] = useState(false);
-  const [consumptionServiceOrderId, setConsumptionServiceOrderId] = useState<string | null>(null);
 
   const [procedures, setProcedures] = useState<Procedure[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
@@ -213,7 +211,7 @@ export default function CreateServiceOrderModal({
 
     setIsSubmitting(true);
     try {
-      const order = await createServiceOrder({
+      await createServiceOrder({
         appointmentId: appointment.id,
         patientId: appointment.patientId,
         items: allItems,
@@ -222,7 +220,7 @@ export default function CreateServiceOrderModal({
       });
       toast.success("Comanda criada com sucesso!");
       onSuccess?.();
-      setConsumptionServiceOrderId(order.id);
+      onClose();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       toast.error(err?.response?.data?.message ?? err?.message ?? "Erro ao criar comanda.");
@@ -232,16 +230,6 @@ export default function CreateServiceOrderModal({
   };
 
   // ─── Render ──────────────────────────────────────────────────────────────
-
-  if (consumptionServiceOrderId && user?.clinicId) {
-    return (
-      <ConsumptionConfirmModal
-        clinicId={user.clinicId as string}
-        serviceOrderId={consumptionServiceOrderId}
-        onClose={() => { setConsumptionServiceOrderId(null); onClose(); }}
-      />
-    );
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
