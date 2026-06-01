@@ -1,4 +1,5 @@
 ﻿import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,6 +158,11 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
       return;
     }
     setPhysicalError(null);
+    if (!formData.patientSignature) {
+      document.getElementById("signature-section")?.scrollIntoView({ behavior: "smooth" });
+      toast.error("A assinatura do paciente é obrigatória.");
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -739,9 +745,9 @@ export default function MedicalForm({ onSubmit, isLoading = false }: MedicalForm
       </Accordion>
 
       {/* Assinatura do paciente */}
-      <div className="pt-2">
+      <div id="signature-section" className="pt-2">
         <SignaturePad
-          label="Assinatura do paciente (opcional)"
+          label="Assinatura do paciente *"
           value={formData.patientSignature}
           onChange={(dataUrl) =>
             setFormData((prev) => ({ ...prev, patientSignature: dataUrl ?? undefined }))
