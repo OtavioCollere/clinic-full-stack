@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  ArrowRight,
-  Calendar,
-  DollarSign,
-  TrendingDown,
-  TrendingUp,
-  UserCheck,
-  Users,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Calendar, Users, UserCheck } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTenant } from "@/hooks/use-tenant";
 import { createTenantLink } from "@/lib/tenant-navigation";
@@ -24,331 +15,391 @@ import {
   getDashboardStats,
 } from "@/services/clinic/clinic.service";
 
-const quickActions = [
-  {
-    icon: <Calendar className="w-5 h-5" />,
-    label: "Nova Consulta",
-    path: "/dashboard/appointments",
-    description: "Agendar uma nova consulta",
-  },
-  {
-    icon: <Users className="w-5 h-5" />,
-    label: "Novo Paciente",
-    path: "/dashboard/patients",
-    description: "Adicionar um novo paciente",
-  },
-  {
-    icon: <UserCheck className="w-5 h-5" />,
-    label: "Profissionais",
-    path: "/dashboard/professionals",
-    description: "Gerenciar equipe da clínica",
-  },
-];
-
-const statSkeletonKeys = [
-  "appointments",
-  "patients",
-  "revenue",
-  "professionals",
-];
-const appointmentSkeletonRows = ["row-1", "row-2", "row-3"];
-const appointmentSkeletonCells = ["patient", "professional", "time", "status"];
-
-function StatCardSkeleton() {
-  return (
-    <div className="bg-card rounded-xl border border-border p-6 animate-pulse">
-      <div className="h-9 w-9 bg-border rounded-lg mb-5" />
-      <div className="h-2.5 w-24 bg-border rounded mb-3" />
-      <div className="h-7 w-16 bg-border rounded mb-4" />
-      <div className="h-px bg-border mb-3" />
-      <div className="h-2.5 w-32 bg-border rounded" />
-    </div>
-  );
+/* ─── helpers ─── */
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-function ChangeIndicator({ value }: { value: number | null }) {
-  if (value === null) return null;
-  const isUp = value >= 0;
-  return (
-    <div className="flex items-center gap-1 text-xs">
-      {isUp ? (
-        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-      ) : (
-        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-      )}
-      <span
-        className={`font-semibold ${isUp ? "text-emerald-400" : "text-red-400"}`}
-      >
-        {isUp ? "+" : ""}
-        {value}%
-      </span>
-    </div>
-  );
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  WAITING: "Aguardando",
-  CONFIRMED: "Confirmada",
-  DONE: "Concluída",
-  CANCELED: "Cancelada",
+function useAnimatedCount(target: number, duration = 900, delay = 0) {
+  const [value, setValue] = useState(0);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || target === 0) return;
+    started.current = true;
+    const timer = setTimeout(() => {
+      const start = Date.now();
+      const tick = () => {
+        const p = Math.min((Date.now() - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setValue(Math.round(eased * target));
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [target, duration, delay]);
+  return value;
+}
+
+/* ─── status pill ─── */
+const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
+  DONE:      { label: "Realizado",  bg: "var(--border-w)", color: "var(--t3)" },
+  CONFIRMED: { label: "Confirmado", bg: "var(--grn-lt)",   color: "var(--grn)" },
+  WAITING:   { label: "Aguardando", bg: "var(--amb-lt)",   color: "var(--amb)" },
+  CANCELED:  { label: "Cancelado",  bg: "var(--red-lt)",   color: "var(--red-cl)" },
 };
 
-const STATUS_CLASSES: Record<string, string> = {
-  WAITING: "bg-amber-500/15 text-amber-400",
-  CONFIRMED: "bg-emerald-500/15 text-emerald-400",
-  DONE: "bg-primary/15 text-primary",
-  CANCELED: "bg-red-500/15 text-red-400",
-};
-
-function AppointmentStatusBadge({ status }: { status: string }) {
+function StatusPill({ status }: { status: string }) {
+  const s = STATUS_MAP[status] ?? STATUS_MAP.WAITING;
   return (
     <span
-      className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASSES[status] ?? "bg-border text-muted-foreground"}`}
+      className="text-[10.5px] font-semibold px-[9px] py-[2px] rounded-full whitespace-nowrap"
+      style={{ background: s.bg, color: s.color }}
     >
-      {STATUS_LABELS[status] ?? status}
+      {s.label}
     </span>
   );
 }
 
+/* ─── main ─── */
 export default function GeneralTab() {
-  const tenant = useTenant();
   const { user } = useAuthContext();
+  const tenant = useTenant();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentAppointments, setRecentAppointments] = useState<Appointment[]>(
-    [],
-  );
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [loadingAppointments, setLoadingAppointments] = useState(true);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.clinicId) return;
     Promise.all([
-      getDashboardStats(user.clinicId)
-        .then(setStats)
-        .finally(() => setLoadingStats(false)),
-      getAppointmentHistoryByClinicId(user.clinicId, 1, 5)
-        .then((data) => {
-          setRecentAppointments(data.items ?? []);
-        })
-        .finally(() => setLoadingAppointments(false)),
-    ]);
+      getDashboardStats(user.clinicId),
+      getAppointmentHistoryByClinicId(user.clinicId, 1, 50),
+    ])
+      .then(([s, apptResp]) => {
+        setStats(s);
+        setAppointments(apptResp.items ?? []);
+      })
+      .finally(() => setLoading(false));
   }, [user?.clinicId]);
 
-  const statCards = stats
-    ? [
-        {
-          icon: <Calendar className="w-4.5 h-4.5" />,
-          iconClass: "bg-blue-50 text-blue-600",
-          accentClass: "bg-blue-500",
-          label: "Consultas de Hoje",
-          value: stats.appointmentsToday.toString(),
-          change: stats.appointmentsTodayChange,
-          subtitle: "vs. mesma semana passada",
-        },
-        {
-          icon: <Users className="w-4.5 h-4.5" />,
-          iconClass: "bg-violet-50 text-violet-600",
-          accentClass: "bg-violet-500",
-          label: "Total de Pacientes",
-          value: stats.totalPatients.toLocaleString("pt-BR"),
-          change: stats.totalPatientsChange,
-          subtitle: "vs. mês passado",
-        },
-        {
-          icon: <DollarSign className="w-4.5 h-4.5" />,
-          iconClass: "bg-emerald-50 text-emerald-600",
-          accentClass: "bg-emerald-500",
-          label: "Receita Mensal",
-          value: stats.monthlyRevenue.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          }),
-          change: stats.monthlyRevenueChange,
-          subtitle: "vs. mês passado",
-        },
-        {
-          icon: <UserCheck className="w-4.5 h-4.5" />,
-          iconClass: "bg-amber-50 text-amber-600",
-          accentClass: "bg-amber-500",
-          label: "Profissionais Ativos",
-          value: stats.activeProfessionals.toString(),
-          change: null,
-          subtitle: null,
-        },
-      ]
-    : [];
+  /* today's appointments sorted by time */
+  const today = todayIso();
+  const todayAppts = appointments
+    .filter((a) => a.startAt?.slice(0, 10) === today)
+    .sort((a, b) => a.startAt.localeCompare(b.startAt));
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const dateLabel = new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  /* hero: first appointment from now, or first of today */
+  const now = new Date();
+  const hero =
+    todayAppts.find((a) => new Date(a.startAt) >= now) ?? todayAppts[0];
 
-  return (
-    <div className="w-full space-y-8">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground mb-0.5">
-            {greeting}, {user?.name?.split(" ")[0] ?? "usuário"} 👋
-          </p>
-          <h1 className="text-2xl font-bold text-foreground">Painel</h1>
-        </div>
-        <span className="text-xs text-muted-foreground capitalize pb-0.5">
-          {dateLabel}
-        </span>
-      </div>
+  /* animated stat counters */
+  const statRev  = useAnimatedCount(stats?.monthlyRevenue      ?? 0, 950, 200);
+  const statAppt = useAnimatedCount(stats?.appointmentsToday   ?? 0, 800, 350);
+  const statPat  = useAnimatedCount(stats?.totalPatients       ?? 0, 850, 400);
+  const statProf = useAnimatedCount(stats?.activeProfessionals ?? 0, 700, 450);
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {loadingStats
-          ? statSkeletonKeys.map((key) => <StatCardSkeleton key={key} />)
-          : statCards.map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-sm transition-all duration-200 relative"
-              >
-                <div className={`absolute top-0 left-0 right-0 h-[3px] ${stat.accentClass}`} />
-                <div className="p-5 pt-6">
-                  <div className={`p-2 rounded-lg w-fit mb-4 ${stat.iconClass}`}>
-                    {stat.icon}
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {stat.label}
-                  </p>
-                  <p className="text-2xl font-bold text-foreground tabular-nums mb-3">
-                    {stat.value}
-                  </p>
-                  {(stat.change !== null || stat.subtitle) && (
-                    <div className="flex items-center gap-2 pt-3 border-t border-border">
-                      <ChangeIndicator value={stat.change} />
-                      {stat.subtitle && (
-                        <span className="text-xs text-muted-foreground">
-                          {stat.subtitle}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-      </div>
+  const quickActions = [
+    { icon: Calendar,  label: "Nova Consulta", path: "/dashboard/appointments" },
+    { icon: Users,     label: "Novo Paciente",  path: "/dashboard/patients" },
+    { icon: UserCheck, label: "Profissionais",  path: "/dashboard/professionals" },
+  ];
 
-      {/* Quick Actions */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Ações rápidas
-        </p>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          {quickActions.map((action) => (
-            <Link
-              key={action.path}
-              href={createTenantLink(tenant, action.path)}
-            >
-              <div className="bg-card rounded-lg border border-border p-5 hover:bg-accent transition-colors duration-150 cursor-pointer group">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-2 bg-primary/10 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-200">
-                    {action.icon}
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200" />
-                </div>
-                <p className="text-sm font-semibold text-foreground mb-0.5">
-                  {action.label}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {action.description}
-                </p>
-              </div>
-            </Link>
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl animate-pulse h-[104px]" style={{ background: "#2A2520" }} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((k) => (
+            <div
+              key={k}
+              className="bg-card rounded-xl border h-[96px] animate-pulse"
+              style={{ borderColor: "var(--border-w)" }}
+            />
           ))}
         </div>
       </div>
+    );
+  }
 
-      {/* Recent Appointments */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Consultas recentes
-          </p>
-          <Link href={createTenantLink(tenant, "/dashboard/appointments")}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary h-7 px-2 text-xs gap-1"
+  return (
+    <div className="space-y-5">
+
+      {/* ── HERO ── */}
+      {hero ? (
+        <section
+          className="rounded-2xl px-6 py-5 flex items-center gap-5 relative overflow-hidden"
+          style={{ background: "var(--t1)" }}
+        >
+          {/* subtle caramel glow */}
+          <div
+            className="absolute right-0 top-0 w-72 h-full pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at 80% 50%, rgba(192,158,117,.14) 0%, transparent 65%)",
+            }}
+          />
+
+          {/* time block */}
+          <div className="shrink-0 flex flex-col items-center gap-1.5">
+            <span
+              className="text-[9.5px] uppercase tracking-[1.2px]"
+              style={{ color: "rgba(255,255,255,.32)" }}
             >
-              Ver todas <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
+              {hero.status === "CONFIRMED" ? "Em atendimento" : "Próximo"}
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--f-serif)",
+                fontStyle: "italic",
+                fontSize: 38,
+                color: "var(--acc)",
+                letterSpacing: -1.5,
+                lineHeight: 1,
+              }}
+            >
+              {fmtTime(hero.startAt)}
+            </span>
+          </div>
+
+          <div className="w-px h-14 shrink-0" style={{ background: "rgba(255,255,255,.09)" }} />
+
+          {/* info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[19px] font-semibold leading-tight" style={{ color: "#fff" }}>
+              {hero.patientName ?? "Paciente"}
+            </p>
+            <p className="text-[13px] mt-0.5" style={{ color: "rgba(255,255,255,.48)" }}>
+              {hero.name}
+            </p>
+          </div>
+
+          {/* actions */}
+          <div className="shrink-0 flex gap-2 z-10">
+            <Link href={createTenantLink(tenant, "/dashboard/appointments")}>
+              <button
+                type="button"
+                className="px-[15px] py-2 rounded-lg text-[13px] font-medium transition-colors"
+                style={{ background: "rgba(255,255,255,.09)", color: "rgba(255,255,255,.7)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,.14)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,.09)";
+                }}
+              >
+                Ver agenda
+              </button>
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <section
+          className="rounded-2xl px-6 py-5 flex items-center gap-4"
+          style={{ background: "var(--t1)" }}
+        >
+          <p className="text-[15px]" style={{ color: "rgba(255,255,255,.5)" }}>
+            Nenhum agendamento para hoje.
+          </p>
+          <Link href={createTenantLink(tenant, "/dashboard/appointments")} className="ml-auto z-10">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-lg text-[13px] font-medium"
+              style={{ background: "var(--acc)", color: "#fff" }}
+            >
+              Agendar
+            </button>
           </Link>
+        </section>
+      )}
+
+      {/* ── STATS ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          {
+            label: "Receita mensal",
+            value: `R$ ${statRev.toLocaleString("pt-BR")}`,
+            hint:
+              stats?.monthlyRevenueChange != null
+                ? `${stats.monthlyRevenueChange > 0 ? "+" : ""}${stats.monthlyRevenueChange}% vs mês anterior`
+                : "acumulado",
+          },
+          {
+            label: "Consultas hoje",
+            value: statAppt,
+            hint:
+              stats?.appointmentsTodayChange != null
+                ? `${stats.appointmentsTodayChange > 0 ? "+" : ""}${stats.appointmentsTodayChange}% vs ontem`
+                : "realizadas",
+          },
+          { label: "Pacientes",     value: statPat,  hint: "cadastrados" },
+          { label: "Profissionais", value: statProf, hint: "ativos" },
+        ].map(({ label, value, hint }) => (
+          <div
+            key={label}
+            className="rounded-xl p-4"
+            style={{
+              background: "#fff",
+              border: "1px solid var(--border-w)",
+              boxShadow: "0 1px 3px rgba(26,23,20,.06)",
+            }}
+          >
+            <p
+              className="text-[10.5px] font-semibold uppercase tracking-[.8px]"
+              style={{ color: "var(--t3)" }}
+            >
+              {label}
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--f-serif)",
+                fontSize: 28,
+                fontWeight: 400,
+                color: "var(--t1)",
+                letterSpacing: -1,
+                lineHeight: 1.1,
+                marginTop: 5,
+              }}
+            >
+              {value}
+            </p>
+            <p className="text-[11.5px] mt-0.5" style={{ color: "var(--t3)" }}>
+              {hint}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── BOTTOM GRID ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
+
+        {/* Agenda de hoje */}
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{
+            background: "#fff",
+            border: "1px solid var(--border-w)",
+            boxShadow: "0 1px 3px rgba(26,23,20,.06)",
+          }}
+        >
+          <div
+            className="px-[18px] py-3.5 flex items-center justify-between"
+            style={{ borderBottom: "1px solid var(--border-w)" }}
+          >
+            <span className="text-[13.5px] font-semibold" style={{ color: "var(--t1)" }}>
+              Agenda de hoje
+            </span>
+            <Link
+              href={createTenantLink(tenant, "/dashboard/appointments")}
+              className="text-[12px] font-medium"
+              style={{ color: "var(--acc-dk)" }}
+            >
+              Ver tudo
+            </Link>
+          </div>
+
+          {todayAppts.length === 0 ? (
+            <div
+              className="px-[18px] py-8 text-center text-[13px]"
+              style={{ color: "var(--t3)" }}
+            >
+              Nenhum agendamento hoje.
+            </div>
+          ) : (
+            <div>
+              {todayAppts.slice(0, 8).map((a) => (
+                <div
+                  key={a.id}
+                  className="grid gap-2.5 px-[18px] py-2.5 transition-colors cursor-pointer"
+                  style={{
+                    gridTemplateColumns: "56px 1fr auto",
+                    alignItems: "center",
+                    borderBottom: "1px solid var(--border-w)",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = "var(--page-bg)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = "";
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "var(--f-serif)",
+                      fontStyle: "italic",
+                      fontSize: 14,
+                      color: "var(--acc-dk)",
+                      textAlign: "right",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {fmtTime(a.startAt)}
+                  </span>
+                  <div>
+                    <p className="text-[13.5px] font-medium" style={{ color: "var(--t1)" }}>
+                      {a.patientName ?? "—"}
+                    </p>
+                    <p className="text-[12px]" style={{ color: "var(--t3)" }}>
+                      {a.name}
+                    </p>
+                  </div>
+                  <StatusPill status={a.status} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Paciente
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Profissional
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Horário
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loadingAppointments ? (
-                appointmentSkeletonRows.map((rowKey) => (
-                  <tr key={rowKey}>
-                    {appointmentSkeletonCells.map((cellKey) => (
-                      <td key={cellKey} className="px-5 py-4">
-                        <div className="h-3.5 bg-border rounded animate-pulse w-24" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : recentAppointments.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-5 py-10 text-center text-sm text-muted-foreground"
+        {/* Ações rápidas */}
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{
+            background: "#fff",
+            border: "1px solid var(--border-w)",
+            boxShadow: "0 1px 3px rgba(26,23,20,.06)",
+          }}
+        >
+          <div
+            className="px-[18px] py-3.5"
+            style={{ borderBottom: "1px solid var(--border-w)" }}
+          >
+            <span className="text-[13.5px] font-semibold" style={{ color: "var(--t1)" }}>
+              Ações rápidas
+            </span>
+          </div>
+          <div className="p-3 space-y-1.5">
+            {quickActions.map(({ icon: Icon, label, path }) => (
+              <Link key={path} href={createTenantLink(tenant, path)}>
+                <div
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = "var(--acc-lt)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = "";
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "var(--acc-lt)" }}
                   >
-                    Nenhuma consulta no histórico ainda.
-                  </td>
-                </tr>
-              ) : (
-                recentAppointments.map((appointment) => (
-                  <tr
-                    key={appointment.id}
-                    className="hover:bg-accent/60 transition-colors duration-150"
+                    <Icon className="w-4 h-4" style={{ color: "var(--acc-dk)" }} />
+                  </div>
+                  <span
+                    className="text-[13.5px] font-medium flex-1"
+                    style={{ color: "var(--t1)" }}
                   >
-                    <td className="px-5 py-3.5 text-sm font-medium text-foreground">
-                      {appointment.patientName ?? "—"}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                      {appointment.professionalName ?? "—"}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-muted-foreground tabular-nums">
-                      {new Date(appointment.startAt).toLocaleString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <AppointmentStatusBadge status={appointment.status} />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    {label}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" style={{ color: "var(--t3)" }} />
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>
