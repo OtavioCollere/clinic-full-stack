@@ -45,12 +45,30 @@ function useAnimatedCount(target: number, duration = 900, delay = 0) {
   return value;
 }
 
+/* ─── change badge ─── */
+function ChangeBadge({ value, suffix = "% vs anterior" }: { value: number | null; suffix?: string }) {
+  if (value === null) return null;
+  const positive = value >= 0;
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
+      style={{
+        background: positive ? "var(--grn-lt)" : "var(--red-lt)",
+        color: positive ? "var(--grn)" : "var(--red-cl)",
+      }}
+    >
+      {positive ? "+" : ""}{value}
+      {suffix}
+    </span>
+  );
+}
+
 /* ─── status pill ─── */
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  DONE:      { label: "Realizado",  bg: "var(--border-w)", color: "var(--t3)" },
-  CONFIRMED: { label: "Confirmado", bg: "var(--grn-lt)",   color: "var(--grn)" },
-  WAITING:   { label: "Aguardando", bg: "var(--amb-lt)",   color: "var(--amb)" },
-  CANCELED:  { label: "Cancelado",  bg: "var(--red-lt)",   color: "var(--red-cl)" },
+  DONE:      { label: "Realizado",  bg: "rgba(0,0,0,0.06)", color: "#6b7280" },
+  CONFIRMED: { label: "Confirmado", bg: "var(--grn-lt)",    color: "var(--grn)" },
+  WAITING:   { label: "Aguardando", bg: "var(--amb-lt)",    color: "var(--amb)" },
+  CANCELED:  { label: "Cancelado",  bg: "var(--red-lt)",    color: "var(--red-cl)" },
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -133,14 +151,14 @@ export default function GeneralTab() {
       {hero ? (
         <section
           className="rounded-2xl px-6 py-5 flex items-center gap-5 relative overflow-hidden"
-          style={{ background: "var(--t1)" }}
+          style={{ background: "#080b1a" }}
         >
-          {/* subtle caramel glow */}
+          {/* subtle purple glow */}
           <div
             className="absolute right-0 top-0 w-72 h-full pointer-events-none"
             style={{
               background:
-                "radial-gradient(ellipse at 80% 50%, rgba(192,158,117,.14) 0%, transparent 65%)",
+                "radial-gradient(ellipse at 80% 50%, rgba(124,58,237,.18) 0%, transparent 65%)",
             }}
           />
 
@@ -154,10 +172,9 @@ export default function GeneralTab() {
             </span>
             <span
               style={{
-                fontFamily: "var(--f-serif)",
-                fontStyle: "italic",
                 fontSize: 38,
-                color: "var(--acc)",
+                fontWeight: 700,
+                color: "#a78bfa",
                 letterSpacing: -1.5,
                 lineHeight: 1,
               }}
@@ -200,7 +217,7 @@ export default function GeneralTab() {
       ) : (
         <section
           className="rounded-2xl px-6 py-5 flex items-center gap-4"
-          style={{ background: "var(--t1)" }}
+          style={{ background: "#080b1a" }}
         >
           <p className="text-[15px]" style={{ color: "rgba(255,255,255,.5)" }}>
             Nenhum agendamento para hoje.
@@ -223,29 +240,39 @@ export default function GeneralTab() {
           {
             label: "Receita mensal",
             value: `R$ ${statRev.toLocaleString("pt-BR")}`,
-            hint:
-              stats?.monthlyRevenueChange != null
-                ? `${stats.monthlyRevenueChange > 0 ? "+" : ""}${stats.monthlyRevenueChange}% vs mês anterior`
-                : "acumulado",
+            hint: "acumulado",
+            change: stats?.monthlyRevenueChange ?? null,
+            changeSuffix: "% vs mês ant.",
           },
           {
             label: "Consultas hoje",
             value: statAppt,
-            hint:
-              stats?.appointmentsTodayChange != null
-                ? `${stats.appointmentsTodayChange > 0 ? "+" : ""}${stats.appointmentsTodayChange}% vs ontem`
-                : "realizadas",
+            hint: "agendamentos",
+            change: stats?.appointmentsTodayChange ?? null,
+            changeSuffix: "% vs ontem",
           },
-          { label: "Pacientes",     value: statPat,  hint: "cadastrados" },
-          { label: "Profissionais", value: statProf, hint: "ativos" },
-        ].map(({ label, value, hint }) => (
+          {
+            label: "Pacientes",
+            value: statPat,
+            hint: "cadastrados",
+            change: stats?.totalPatientsChange ?? null,
+            changeSuffix: "% vs mês ant.",
+          },
+          {
+            label: "Profissionais",
+            value: statProf,
+            hint: "ativos",
+            change: null,
+            changeSuffix: "",
+          },
+        ].map(({ label, value, hint, change, changeSuffix }) => (
           <div
             key={label}
             className="rounded-xl p-4"
             style={{
               background: "#fff",
               border: "1px solid var(--border-w)",
-              boxShadow: "0 1px 3px rgba(26,23,20,.06)",
+              boxShadow: "0 1px 2px rgba(17,17,20,.04)",
             }}
           >
             <p
@@ -255,21 +282,15 @@ export default function GeneralTab() {
               {label}
             </p>
             <p
-              style={{
-                fontFamily: "var(--f-serif)",
-                fontSize: 28,
-                fontWeight: 400,
-                color: "var(--t1)",
-                letterSpacing: -1,
-                lineHeight: 1.1,
-                marginTop: 5,
-              }}
+              className="text-[26px] font-bold mt-1 leading-none"
+              style={{ color: "var(--t1)" }}
             >
               {value}
             </p>
-            <p className="text-[11.5px] mt-0.5" style={{ color: "var(--t3)" }}>
-              {hint}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <span className="text-[11.5px]" style={{ color: "var(--t3)" }}>{hint}</span>
+              <ChangeBadge value={change} suffix={changeSuffix} />
+            </div>
           </div>
         ))}
       </div>
@@ -296,7 +317,7 @@ export default function GeneralTab() {
             <Link
               href={createTenantLink(tenant, "/dashboard/appointments")}
               className="text-[12px] font-medium"
-              style={{ color: "var(--acc-dk)" }}
+              style={{ color: "#7c3aed" }}
             >
               Ver tudo
             </Link>
@@ -329,10 +350,9 @@ export default function GeneralTab() {
                 >
                   <span
                     style={{
-                      fontFamily: "var(--f-serif)",
-                      fontStyle: "italic",
-                      fontSize: 14,
-                      color: "var(--acc-dk)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#7c3aed",
                       textAlign: "right",
                       lineHeight: 1,
                     }}
@@ -377,7 +397,7 @@ export default function GeneralTab() {
                 <div
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.background = "var(--acc-lt)";
+                    (e.currentTarget as HTMLDivElement).style.background = "rgba(124,58,237,0.08)";
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLDivElement).style.background = "";
@@ -385,9 +405,9 @@ export default function GeneralTab() {
                 >
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: "var(--acc-lt)" }}
+                    style={{ background: "rgba(124,58,237,0.08)" }}
                   >
-                    <Icon className="w-4 h-4" style={{ color: "var(--acc-dk)" }} />
+                    <Icon className="w-4 h-4" style={{ color: "#7c3aed" }} />
                   </div>
                   <span
                     className="text-[13.5px] font-medium flex-1"
