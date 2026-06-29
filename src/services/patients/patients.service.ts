@@ -38,6 +38,11 @@ export async function createPatient(data: CreatePatientDto) {
   return response.data;
 }
   
+export async function getPatientsByProfessionalId(professionalId: string): Promise<PatientResponse[]> {
+  const response = await api.get<PatientResponse[]>(`/professionals/${professionalId}/patients`);
+  return response.data;
+}
+
 export async function getPatients(clinicId: string, page: number = 1, pageSize: number = 100, query?: string) {
   const params = new URLSearchParams({
     page: page.toString(),

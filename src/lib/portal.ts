@@ -13,6 +13,7 @@ import {
   Stethoscope,
   CalendarCheck,
   Package,
+  Receipt,
 } from "lucide-react";
 
 export type ClinicRoleType = "OWNER" | "ADMIN" | "PROFESSIONAL" | "PATIENT" | "COLLABORATOR";
@@ -80,6 +81,7 @@ const MENU_DASHBOARD: MenuItem[] = [
   { icon: UserCheck,       label: "Profissionais",   path: "/dashboard/professionals" },
   { icon: Syringe,         label: "Procedimentos",   path: "/dashboard/procedures" },
   { icon: Package,         label: "Insumos",         path: "/dashboard/inventory" },
+  { icon: Receipt,         label: "Comandas",        path: "/dashboard/comandas" },
 ];
 
 /** Menu items for collaborator (receptionist): patients + appointments only */

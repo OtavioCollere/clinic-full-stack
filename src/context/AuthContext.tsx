@@ -66,8 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null);
       }
-    } catch {
+    } catch (err) {
       setUser(null);
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        const tenant = typeof window !== "undefined" ? extractTenantFromPath(window.location.pathname) : null;
+        const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
+        toast.error("Clínica não encontrada. Verifique o endereço.");
+        router.replace(loginPath);
+      }
     } finally {
       setLoading(false);
     }

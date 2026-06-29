@@ -7,6 +7,7 @@ import {
   ChevronDown,
   LayoutDashboard,
   LogOut,
+  Package,
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
@@ -40,13 +41,14 @@ const menuItems = [
   { icon: UserCheck, label: "Profissionais", path: "/dashboard/professionals" },
   { icon: Activity, label: "Performance", path: "/dashboard/performance" },
   { icon: Syringe, label: "Procedimentos", path: "/dashboard/procedures" },
+  { icon: Package, label: "Insumos", path: "/dashboard/inventory" },
   { icon: Receipt, label: "Comandas", path: "/dashboard/billing" },
   { icon: TrendingUp, label: "Financeiro", path: "/dashboard/financial" },
 ];
 
-const ACTIVE_COLOR = "#93c5fd";
-const ACTIVE_BG = "rgba(96,165,250,0.14)";
-const ACTIVE_BORDER = "#60a5fa";
+const ACTIVE_COLOR = "#a78bfa";
+const ACTIVE_BG = "rgba(124,58,237,0.12)";
+const ACTIVE_BORDER = "#7c3aed";
 const INACTIVE_TEXT = "rgba(229,237,249,0.86)";
 const INACTIVE_ICON = "rgba(229,237,249,0.58)";
 const LOGO_BG = "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)";
@@ -268,29 +270,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* ── Main ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header
-          className="h-16 flex items-center px-6 lg:px-8 gap-3 flex-shrink-0"
-          style={{
-            background: "var(--header-bg-gradient)",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-          }}
-        >
-          <div className="flex-1 flex items-center gap-2 text-sm">
-            <span className="font-semibold text-white">Clínica Principal</span>
-            <span className="text-white/25">·</span>
-            <span className="font-medium text-white/70">{firstName}</span>
+        <header className="h-14 flex items-center px-6 lg:px-8 gap-4 flex-shrink-0 bg-card border-b border-border">
+          <div className="flex-1 flex items-center gap-2 text-sm min-w-0">
+            <span className="font-semibold text-foreground">Clínica Principal</span>
+            <span className="text-border select-none">·</span>
+            <span className="text-muted-foreground truncate">Olá, {firstName}</span>
           </div>
           <button
             type="button"
-            className="relative p-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            aria-label="Notificações"
+            className="relative p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
-            <Bell size={17} />
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full border-2 border-[#080B1A] bg-blue-400" />
+            <Bell size={16} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-500 border-2 border-card" />
           </button>
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold bg-white/10 border border-white/20">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-primary text-xs font-bold bg-primary/10 border border-primary/20 select-none">
             {initials}
           </div>
-          <ChevronDown size={14} className="text-white/50" />
         </header>
 
         {/* Content */}

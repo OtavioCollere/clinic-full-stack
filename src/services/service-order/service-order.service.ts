@@ -34,6 +34,7 @@ export interface CreateServiceOrderPayload {
 export interface ServiceOrderResponse {
   id: string;
   status: string;
+  paymentMethod?: string;
   total: number;
   items: Array<{
     id: string;
@@ -88,6 +89,21 @@ export async function getServiceOrdersByClinicId(
     { params: { page, pageSize } }
   );
   return response.data;
+}
+
+export async function getServiceOrdersByFranchiseId(
+  franchiseId: string,
+  status?: string
+): Promise<ServiceOrderResponse[]> {
+  const response = await api.get<ServiceOrderResponse[]>(
+    `/franchises/${franchiseId}/service-orders`,
+    { params: status ? { status } : undefined }
+  );
+  return response.data;
+}
+
+export async function markServiceOrderAsPaid(serviceOrderId: string): Promise<void> {
+  await api.patch(`/service-orders/${serviceOrderId}/pay`);
 }
 
 export async function getServiceOrdersByPatientId(

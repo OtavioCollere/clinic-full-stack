@@ -137,21 +137,27 @@ export default function GeneralTab() {
   const statCards = stats
     ? [
         {
-          icon: <Calendar className="w-5 h-5 text-primary" />,
+          icon: <Calendar className="w-4.5 h-4.5" />,
+          iconClass: "bg-blue-50 text-blue-600",
+          accentClass: "bg-blue-500",
           label: "Consultas de Hoje",
           value: stats.appointmentsToday.toString(),
           change: stats.appointmentsTodayChange,
           subtitle: "vs. mesma semana passada",
         },
         {
-          icon: <Users className="w-5 h-5 text-primary" />,
+          icon: <Users className="w-4.5 h-4.5" />,
+          iconClass: "bg-violet-50 text-violet-600",
+          accentClass: "bg-violet-500",
           label: "Total de Pacientes",
           value: stats.totalPatients.toLocaleString("pt-BR"),
           change: stats.totalPatientsChange,
           subtitle: "vs. mês passado",
         },
         {
-          icon: <DollarSign className="w-5 h-5 text-primary" />,
+          icon: <DollarSign className="w-4.5 h-4.5" />,
+          iconClass: "bg-emerald-50 text-emerald-600",
+          accentClass: "bg-emerald-500",
           label: "Receita Mensal",
           value: stats.monthlyRevenue.toLocaleString("pt-BR", {
             style: "currency",
@@ -161,7 +167,9 @@ export default function GeneralTab() {
           subtitle: "vs. mês passado",
         },
         {
-          icon: <UserCheck className="w-5 h-5 text-primary" />,
+          icon: <UserCheck className="w-4.5 h-4.5" />,
+          iconClass: "bg-amber-50 text-amber-600",
+          accentClass: "bg-amber-500",
           label: "Profissionais Ativos",
           value: stats.activeProfessionals.toString(),
           change: null,
@@ -170,13 +178,27 @@ export default function GeneralTab() {
       ]
     : [];
 
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const dateLabel = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
   return (
     <div className="w-full space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Painel</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Visão geral da sua clínica
-        </p>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground mb-0.5">
+            {greeting}, {user?.name?.split(" ")[0] ?? "usuário"} 👋
+          </p>
+          <h1 className="text-2xl font-bold text-foreground">Painel</h1>
+        </div>
+        <span className="text-xs text-muted-foreground capitalize pb-0.5">
+          {dateLabel}
+        </span>
       </div>
 
       {/* Stats */}
@@ -186,27 +208,30 @@ export default function GeneralTab() {
           : statCards.map((stat) => (
               <div
                 key={stat.label}
-                className="bg-card rounded-lg border border-border p-5 hover:border-border/80 transition-colors duration-200"
+                className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-sm transition-all duration-200 relative"
               >
-                <div className="p-2 bg-primary/10 rounded-md w-fit mb-4">
-                  {stat.icon}
-                </div>
-                <p className="text-xs text-muted-foreground mb-1">
-                  {stat.label}
-                </p>
-                <p className="text-2xl font-bold text-foreground tabular-nums mb-3">
-                  {stat.value}
-                </p>
-                {(stat.change !== null || stat.subtitle) && (
-                  <div className="flex items-center gap-2 pt-3 border-t border-border">
-                    <ChangeIndicator value={stat.change} />
-                    {stat.subtitle && (
-                      <span className="text-xs text-muted-foreground">
-                        {stat.subtitle}
-                      </span>
-                    )}
+                <div className={`absolute top-0 left-0 right-0 h-[3px] ${stat.accentClass}`} />
+                <div className="p-5 pt-6">
+                  <div className={`p-2 rounded-lg w-fit mb-4 ${stat.iconClass}`}>
+                    {stat.icon}
                   </div>
-                )}
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {stat.label}
+                  </p>
+                  <p className="text-2xl font-bold text-foreground tabular-nums mb-3">
+                    {stat.value}
+                  </p>
+                  {(stat.change !== null || stat.subtitle) && (
+                    <div className="flex items-center gap-2 pt-3 border-t border-border">
+                      <ChangeIndicator value={stat.change} />
+                      {stat.subtitle && (
+                        <span className="text-xs text-muted-foreground">
+                          {stat.subtitle}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
       </div>
