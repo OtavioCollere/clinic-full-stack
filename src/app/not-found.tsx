@@ -15,11 +15,11 @@ export default function NotFound() {
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center"
           style={{
-            background: "rgba(124,58,237,0.18)",
-            boxShadow: "0 0 16px rgba(124,58,237,0.30)",
+            background: "rgba(203,152,73,0.18)",
+            boxShadow: "0 0 16px rgba(203,152,73,0.30)",
           }}
         >
-          <Stethoscope className="w-5 h-5" style={{ color: "#a78bfa" }} />
+          <Stethoscope className="w-5 h-5" style={{ color: "#f5b85a" }} />
         </div>
         <span className="font-bold text-white text-xl tracking-wide">Cliniker</span>
       </div>
@@ -28,7 +28,7 @@ export default function NotFound() {
       <p
         className="text-[120px] font-bold leading-none select-none"
         style={{
-          background: "linear-gradient(135deg, #7C3AED 0%, #a78bfa 100%)",
+          background: "linear-gradient(135deg, #8a6020 0%, #f5b85a 100%)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
         }}
@@ -47,7 +47,7 @@ export default function NotFound() {
         href="/"
         className="px-6 py-3 rounded-lg font-semibold text-white text-sm transition-opacity hover:opacity-80"
         style={{
-          background: "linear-gradient(135deg, #6d28d9 0%, #7C3AED 100%)",
+          background: "linear-gradient(135deg, #6a4815 0%, #cb9849 100%)",
           boxShadow: "0 0 20px rgba(124,58,237,0.35)",
         }}
       >

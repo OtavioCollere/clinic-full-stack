@@ -106,7 +106,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-violet-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[#fdf8f0] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo & Header */}
         <div className="text-center mb-12">
@@ -263,7 +263,7 @@ export default function Register() {
             <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gradient-to-br from-white to-violet-50 text-muted-foreground">
+            <span className="px-2 bg-gradient-to-br from-white to-[#fdf8f0] text-muted-foreground">
               Já tem uma conta?
             </span>
           </div>

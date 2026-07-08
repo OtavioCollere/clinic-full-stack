@@ -53,9 +53,9 @@
   --radius: 0.5rem;
 
   /* ---------- Sidebar ---------- */
-  --sidebar-bg-base: #080b1a;
-  --sidebar-bg-deep: #050812;
-  --sidebar-glow-color: rgba(124, 58, 237, 0.1);
+  --sidebar-bg-base: #1c1a14;
+  --sidebar-bg-deep: #120f0a;
+  --sidebar-glow-color: rgba(203, 152, 73, 0.12);
   --sidebar-bg-with-glow:
     radial-gradient(
       ellipse at 90% 0%,
@@ -64,7 +64,7 @@
     ),
     radial-gradient(
       ellipse at 20% 100%,
-      rgba(124, 58, 237, 0.05),
+      rgba(203, 152, 73, 0.06),
       transparent 45%
     ),
     linear-gradient(
@@ -74,63 +74,64 @@
     );
 
   /* ---------- Header ---------- */
-  --header-bg-gradient: linear-gradient(to right, #080b1a 0%, #0a0e22 100%);
+  --header-bg-gradient: linear-gradient(to right, #1c1a14 0%, #242018 100%);
   --header-glow: none;
 
   /* ---------- Brand ---------- */
-  --brand-primary: #7c3aed;
-  --brand-primary-hover: #6d28d9;
-  --brand-accent: #7c3aed;
-  --brand-accent-glow: rgba(124, 58, 237, 0.15);
+  --brand-primary: #8a6020;
+  --brand-primary-hover: #6a4815;
+  --brand-accent: #cb9849;
+  --brand-accent-glow: rgba(203, 152, 73, 0.18);
 
   /* ---------- shadcn tokens ---------- */
-  --background: #f4f5f7;
-  --foreground: #111114;
+  --background: #faf9f6;
+  --foreground: #1c1a14;
   --card: #ffffff;
-  --card-foreground: #111114;
+  --card-foreground: #1c1a14;
   --popover: #ffffff;
-  --popover-foreground: #111114;
+  --popover-foreground: #1c1a14;
   --primary: var(--brand-primary);
   --primary-foreground: #ffffff;
-  --secondary: #f0f1f3;
-  --secondary-foreground: #111114;
-  --muted: #f0f1f3;
-  --muted-foreground: #6b7280;
-  --accent: #f0f1f3;
-  --accent-foreground: #111114;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: rgba(0, 0, 0, 0.08);
-  --input: rgba(0, 0, 0, 0.06);
-  --ring: var(--brand-primary);
-  --chart-1: oklch(0.55 0.22 264);
-  --chart-2: oklch(0.65 0.14 210);
-  --chart-3: oklch(0.75 0.1 220);
-  --chart-4: oklch(0.9 0.23 128);
-  --chart-5: oklch(0.65 0.2 240);
+  --secondary: #f2f0ea;
+  --secondary-foreground: #1c1a14;
+  --muted: #f2f0ea;
+  --muted-foreground: #7a6d56;
+  --accent: #fdf8f0;
+  --accent-foreground: #6a4815;
+  --destructive: #a84858;
+  --border: #e8dfc8;
+  --input: rgba(0, 0, 0, 0.07);
+  --ring: #cb9849;
+  --chart-1: oklch(0.58 0.14 68);
+  --chart-2: oklch(0.52 0.1 50);
+  --chart-3: oklch(0.68 0.12 85);
+  --chart-4: oklch(0.72 0.1 150);
+  --chart-5: oklch(0.62 0.12 30);
 
   /* ---------- Sidebar tokens ---------- */
   --sidebar: var(--sidebar-bg-base);
-  --sidebar-foreground: rgba(255, 255, 255, 0.9);
-  --sidebar-primary: var(--brand-primary);
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: rgba(255, 255, 255, 0.06);
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: rgba(255, 255, 255, 0.07);
-  --sidebar-ring: var(--brand-primary);
+  --sidebar-foreground: rgba(255, 255, 255, 0.88);
+  --sidebar-primary: var(--brand-accent);
+  --sidebar-primary-foreground: #1c1a14;
+  --sidebar-accent: rgba(203, 152, 73, 0.12);
+  --sidebar-accent-foreground: #f5b85a;
+  --sidebar-border: rgba(203, 152, 73, 0.12);
+  --sidebar-ring: var(--brand-accent);
 
-  --page-bg: #f4f5f7;
+  --page-bg: #faf9f6;
 
   /* ---------- Semantic tokens (dashboard) ---------- */
-  --t1: #111114;
-  --t2: #4b5563;
-  --t3: #9ca3af;
-  --border-w: rgba(0, 0, 0, 0.08);
-  --grn:    #16a34a;
-  --grn-lt: #f0fdf4;
-  --amb:    #d97706;
-  --amb-lt: #fef3c7;
-  --red-cl: #dc2626;
-  --red-lt: #fef2f2;
+  --t1: #1c1a14;
+  --t2: #5a5040;
+  --t3: #7a6d56;
+  --border-w: #e8dfc8;
+  --shadow-card: 0 1px 3px rgba(60, 40, 10, 0.08), 0 1px 2px rgba(60, 40, 10, 0.05);
+  --grn:    #477a50;
+  --grn-lt: #f0f5f1;
+  --amb:    #a87928;
+  --amb-lt: #fdf8f0;
+  --red-cl: #a84858;
+  --red-lt: #fff0f2;
 }
 
 @layer base {
@@ -166,7 +167,7 @@
     --fc-border-color: rgba(17, 17, 20, 0.08);
     --fc-page-bg-color: transparent;
     --fc-neutral-bg-color: #f7f8fa;
-    --fc-today-bg-color: rgba(124, 58, 237, 0.09);
+    --fc-today-bg-color: rgba(203, 152, 73, 0.09);
     --fc-now-indicator-color: #ef4444;
     color: var(--foreground);
     font-family: var(--font-jakarta), sans-serif;
@@ -201,8 +202,8 @@
 
   .clinic-calendar-shell .fc .fc-button:hover,
   .clinic-calendar-shell .fc .fc-button:focus {
-    border-color: rgba(124, 58, 237, 0.35);
-    background: rgba(124, 58, 237, 0.08);
+    border-color: rgba(203, 152, 73, 0.45);
+    background: rgba(203, 152, 73, 0.09);
     color: var(--foreground);
     box-shadow: none;
   }
@@ -257,7 +258,7 @@
   }
 
   .clinic-calendar-shell .fc .fc-highlight {
-    background: rgba(124, 58, 237, 0.14);
+    background: rgba(203, 152, 73, 0.14);
   }
 
   .clinic-calendar-shell .fc .fc-timegrid-now-indicator-line {
