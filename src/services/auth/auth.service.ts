@@ -65,3 +65,14 @@ export async function changePasswordAuthenticated(
   });
   return response.data;
 }
+
+export async function loginAdmin(data: { email: string; password: string }) {
+  return api.post(`${baseUrl}/authenticate`, data, { withCredentials: true });
+}
+
+export async function fetchAdminMe(): Promise<{ id: string; role: string }> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+  const response = await fetch(`${apiUrl}/admin/me`, { credentials: "include" });
+  if (!response.ok) throw new Error("Unauthorized");
+  return response.json();
+}

@@ -36,7 +36,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        await api.post("/refresh");
+        await api.post("/users/refresh");
         return api(originalRequest);
       } catch (refreshError) {
         if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/login")) {
