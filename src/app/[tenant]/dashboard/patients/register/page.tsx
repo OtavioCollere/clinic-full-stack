@@ -13,7 +13,7 @@ import { useTenant } from "@/hooks/use-tenant";
 import { createTenantLink } from "@/lib/tenant-navigation";
 import { validateCPF } from "@/utils/validate-cpf";
 import { toast } from "sonner";
-import type { CreateAnamnesisDto } from "@/services/patients/dtos/create-anamnesis.dto";
+import type { CreateAnamnesisDto, FacialRegion } from "@/services/patients/dtos/create-anamnesis.dto";
 import { createAnamnesis } from "@/services/patients/anamnesis.service";
 
 interface UserFormData {
@@ -121,7 +121,7 @@ export default function PatientRegistration() {
     birthDate: "",
   });
 
-  const [anamnesisData, setAnamnesisData] = useState<CreateAnamnesisDto>({});
+  const [anamnesisData, setAnamnesisData] = useState<CreateAnamnesisDto | null>(null);
 
   // CPF masking function - formats input as 000.000.000-00
   const maskCPF = (value: string): string => {
@@ -317,21 +317,21 @@ export default function PatientRegistration() {
       aestheticHistory: {
         hadPreviousAestheticTreatment: medicalData.hadAestheticTreatment ?? false,
         botulinumToxin: medicalData.botox ?? false,
-        botulinumRegion: medicalData.botoxRegion,
+        botulinumRegion: medicalData.botoxRegion as FacialRegion | undefined,
         filler: medicalData.fillers ?? false,
-        fillerRegion: medicalData.fillersRegion,
+        fillerRegion: medicalData.fillersRegion as FacialRegion | undefined,
         fillerProduct: medicalData.fillersProduct,
         suspensionThreads: medicalData.threads ?? false,
-        suspensionThreadsRegion: medicalData.threadsRegion,
+        suspensionThreadsRegion: medicalData.threadsRegion as FacialRegion | undefined,
         suspensionThreadsProduct: medicalData.threadsProduct,
         surgicalLift: medicalData.surgicalLift ?? false,
-        surgicalLiftRegion: medicalData.surgicalLiftRegion,
+        surgicalLiftRegion: medicalData.surgicalLiftRegion as FacialRegion | undefined,
         surgicalLiftProduct: medicalData.surgicalLiftProduct,
         chemicalPeeling: medicalData.chemicalPeel ?? false,
-        chemicalPeelingRegion: medicalData.chemicalPeelRegion,
+        chemicalPeelingRegion: medicalData.chemicalPeelRegion as FacialRegion | undefined,
         chemicalPeelingProduct: medicalData.chemicalPeelProduct,
         laser: medicalData.laser ?? false,
-        laserRegion: medicalData.laserRegion,
+        laserRegion: medicalData.laserRegion as FacialRegion | undefined,
         laserProduct: medicalData.laserProduct,
         exposedToHeatOrColdWork: medicalData.exposedToHeatCold ?? false,
       },
@@ -374,9 +374,9 @@ export default function PatientRegistration() {
         otherRelevantIssues: medicalData.additionalInfo,
       },
       physicalAssessment: {
-        bloodPressure: medicalData.bloodPressure,
-        height: medicalData.height,
-        initialWeight: medicalData.initialWeight,
+        bloodPressure: medicalData.bloodPressure ?? "",
+        height: medicalData.height ?? 0,
+        initialWeight: medicalData.initialWeight ?? 0,
         finalWeight: medicalData.finalWeight,
       },
     };
@@ -542,7 +542,12 @@ export default function PatientRegistration() {
 
     if (fillMedicalForm) {
       // Usa os dados passados como parâmetro ou do estado
-      const anamnesisToSubmit = data || anamnesisData;
+      const anamnesisToSubmit = data ?? anamnesisData;
+
+      if (!anamnesisToSubmit) {
+        toast.error("Preencha pelo menos uma seção do formulário de anamnese para finalizar o cadastro.");
+        return;
+      }
       
       // Valida novamente
       const validation = validateAnamnesisData(anamnesisToSubmit);
