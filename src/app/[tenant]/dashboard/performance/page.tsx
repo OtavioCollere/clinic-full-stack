@@ -431,8 +431,8 @@ export default function PerformancePage() {
           label="Consultas Realizadas"
           value={kpi.done}
           sub={`de ${kpi.total} agendadas`}
-          icon={<Calendar className="w-4 h-4" style={{ color: "#7c3aed" }} />}
-          gradient="linear-gradient(135deg,#7c3aed,#a78bfa)"
+          icon={<Calendar className="w-4 h-4" style={{ color: "#cb9849" }} />}
+          gradient="linear-gradient(135deg,#cb9849,#f5b85a)"
         />
         <KpiCard
           label="Receita Total"
@@ -469,8 +469,8 @@ export default function PerformancePage() {
                 <LineChart data={monthlyData} margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
                   <defs>
                     <linearGradient id="gradLine1" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#7c3aed" />
-                      <stop offset="100%" stopColor="#a78bfa" />
+                      <stop offset="0%" stopColor="#cb9849" />
+                      <stop offset="100%" stopColor="#f5b85a" />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.04)" vertical={false} />
@@ -479,7 +479,7 @@ export default function PerformancePage() {
                   <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(0,0,0,0.06)" }} />
                   <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "12px" }} />
                   <Line type="monotone" dataKey="Agendadas" stroke="#c4b5fd" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Realizadas" stroke="#7c3aed" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Realizadas" stroke="#cb9849" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -504,8 +504,8 @@ export default function PerformancePage() {
                       <stop offset="100%" stopColor="#ddd6fe" />
                     </linearGradient>
                     <linearGradient id="gradDone" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#7c3aed" />
-                      <stop offset="100%" stopColor="#a78bfa" />
+                      <stop offset="0%" stopColor="#cb9849" />
+                      <stop offset="100%" stopColor="#f5b85a" />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.04)" horizontal={false} />
@@ -625,7 +625,7 @@ export default function PerformancePage() {
                       </td>
                       <td className="py-3 px-3 font-medium text-slate-700">{p.name}</td>
                       <td className="py-3 px-3 text-right">
-                        <span className="font-semibold text-violet-600">{p.count}</span>
+                        <span className="font-semibold text-[#8a6020]">{p.count}</span>
                       </td>
                       <td className="py-3 px-3 text-right font-semibold text-slate-700">
                         {formatCurrency(p.revenue)}
@@ -704,7 +704,7 @@ export default function PerformancePage() {
                       </td>
                       <td className="py-3 px-3 text-right text-slate-400">{p.total}</td>
                       <td className="py-3 px-3 text-right">
-                        <span className="font-semibold text-violet-600">{p.done}</span>
+                        <span className="font-semibold text-[#8a6020]">{p.done}</span>
                       </td>
                       <td className="py-3 px-3 text-right font-semibold text-slate-700">
                         {formatCurrency(p.revenue)}

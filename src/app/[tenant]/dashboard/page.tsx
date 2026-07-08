@@ -3,16 +3,14 @@
 import { useState } from "react";
 import GeneralTab from "./_components/general-tab";
 import BillingPage from "./billing/page";
-import FinancialPage from "./financial/page";
 import PerformancePage from "./performance/page";
 
-type DashTab = "geral" | "performance" | "faturamento" | "procedimentos";
+type DashTab = "geral" | "performance" | "faturamento";
 
 const TABS: { key: DashTab; label: string }[] = [
   { key: "geral", label: "Geral" },
   { key: "performance", label: "Performance" },
   { key: "faturamento", label: "Faturamento" },
-  { key: "procedimentos", label: "Procedimentos" },
 ];
 
 export default function DashboardPage() {
@@ -42,7 +40,6 @@ export default function DashboardPage() {
       {activeTab === "geral" && <GeneralTab />}
       {activeTab === "performance" && <PerformancePage />}
       {activeTab === "faturamento" && <BillingPage />}
-      {activeTab === "procedimentos" && <FinancialPage />}
     </div>
   );
 }

@@ -75,7 +75,7 @@ function StatusPill({ status }: { status: string }) {
   const s = STATUS_MAP[status] ?? STATUS_MAP.WAITING;
   return (
     <span
-      className="text-[10.5px] font-semibold px-[9px] py-[2px] rounded-full whitespace-nowrap"
+      className="text-[11px] font-semibold px-[9px] py-[3px] rounded-full whitespace-nowrap"
       style={{ background: s.bg, color: s.color }}
     >
       {s.label}
@@ -174,7 +174,7 @@ export default function GeneralTab() {
               style={{
                 fontSize: 38,
                 fontWeight: 700,
-                color: "#a78bfa",
+                color: "#cb9849",
                 letterSpacing: -1.5,
                 lineHeight: 1,
               }}
@@ -272,23 +272,23 @@ export default function GeneralTab() {
             style={{
               background: "#fff",
               border: "1px solid var(--border-w)",
-              boxShadow: "0 1px 2px rgba(17,17,20,.04)",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <p
-              className="text-[10.5px] font-semibold uppercase tracking-[.8px]"
+              className="text-[11px] font-semibold uppercase tracking-[.8px]"
               style={{ color: "var(--t3)" }}
             >
               {label}
             </p>
             <p
-              className="text-[26px] font-bold mt-1 leading-none"
+              className="text-[26px] font-extrabold mt-1 leading-none"
               style={{ color: "var(--t1)" }}
             >
               {value}
             </p>
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-              <span className="text-[11.5px]" style={{ color: "var(--t3)" }}>{hint}</span>
+              <span className="text-[12px]" style={{ color: "var(--t3)" }}>{hint}</span>
               <ChangeBadge value={change} suffix={changeSuffix} />
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function GeneralTab() {
           style={{
             background: "#fff",
             border: "1px solid var(--border-w)",
-            boxShadow: "0 1px 3px rgba(26,23,20,.06)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <div
@@ -317,7 +317,7 @@ export default function GeneralTab() {
             <Link
               href={createTenantLink(tenant, "/dashboard/appointments")}
               className="text-[12px] font-medium"
-              style={{ color: "#7c3aed" }}
+              style={{ color: "#cb9849" }}
             >
               Ver tudo
             </Link>
@@ -352,7 +352,7 @@ export default function GeneralTab() {
                     style={{
                       fontSize: 13,
                       fontWeight: 600,
-                      color: "#7c3aed",
+                      color: "#cb9849",
                       textAlign: "right",
                       lineHeight: 1,
                     }}
@@ -380,7 +380,7 @@ export default function GeneralTab() {
           style={{
             background: "#fff",
             border: "1px solid var(--border-w)",
-            boxShadow: "0 1px 3px rgba(26,23,20,.06)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <div
@@ -407,7 +407,7 @@ export default function GeneralTab() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: "rgba(124,58,237,0.08)" }}
                   >
-                    <Icon className="w-4 h-4" style={{ color: "#7c3aed" }} />
+                    <Icon className="w-4 h-4" style={{ color: "#cb9849" }} />
                   </div>
                   <span
                     className="text-[13.5px] font-medium flex-1"
