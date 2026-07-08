@@ -8,7 +8,7 @@ import { Plus, Edit2, Trash2 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuthContext } from "@/context/AuthContext";
 import { createTenantLink } from "@/lib/tenant-navigation";
-import { getProceduresByClinicId, getProceduresByFranchiseId } from "@/services/procedures/procedure.service";
+import { getProceduresByClinicId, getProceduresByFranchiseId, deleteProcedure } from "@/services/procedures/procedure.service";
 import { getFranchises } from "@/services/franchise/franchise.service";
 import { toast } from "sonner";
 
@@ -65,8 +65,26 @@ export default function ProceduresPage() {
     fetchProcedures();
   }, [user?.clinicId, selectedFranchiseId]);
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting procedure:", id);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    if (deletingId === id) {
+      try {
+        await deleteProcedure(id);
+        setProcedures((prev) => prev.filter((p) => p.id !== id));
+        toast.success("Procedimento excluído com sucesso");
+      } catch (error: any) {
+        if (error.response?.status === 400) {
+          toast.error("Não é possível excluir um procedimento com agendamentos associados");
+        } else {
+          toast.error("Erro ao excluir procedimento");
+        }
+      } finally {
+        setDeletingId(null);
+      }
+    } else {
+      setDeletingId(id);
+    }
   };
 
   const handleEdit = (id: string) => {
@@ -156,18 +174,33 @@ export default function ProceduresPage() {
                   <Edit2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Editar</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDelete(procedure.id);
-                  }}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Excluir</span>
-                </button>
+                {deletingId === procedure.id ? (
+                  <div className="flex flex-1 gap-1">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(procedure.id); }}
+                      className="flex-1 px-3 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingId(null); }}
+                      className="flex-1 px-3 py-2 text-sm font-medium text-foreground border border-border hover:bg-secondary rounded-lg transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(procedure.id); }}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Excluir</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}
