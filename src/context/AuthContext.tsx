@@ -1,18 +1,30 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from "react";
 import { fetchMe, logoutUser } from "@/services/auth/auth.service";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { extractTenantFromPath, addTenantToPath } from "@/lib/tenant";
 
-interface User {
+import type { ClinicRoleType } from "@/lib/portal";
+
+export interface User {
   id: string;
   name: string;
   email: string;
   cpf?: string;
   clinicId?: string;
   clinicMembershipId?: string;
+  clinicRole?: ClinicRoleType;
+  permissions?: string[];
+  /** Apenas para PATIENT: id do paciente (para formulário de anamnese) */
+  patientId?: string;
+  /** Apenas para PROFESSIONAL: id do profissional (para agendamentos) */
+  professionalId?: string;
+  /** Apenas para PATIENT: se já possui anamnese preenchida */
+  isAnamneseDone?: boolean;
+  /** Se a clínica já possui ao menos uma franquia cadastrada */
+  hasFranchise?: boolean;
 }
 
 interface AuthContextType {
@@ -28,21 +40,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
   const router = useRouter();
 
-  const fetchUser = async () => {
+  const doFetchUser = async () => {
     try {
-      // Não busca usuário se estiver na página de login/register
-      if (typeof window !== "undefined" && window.location.pathname.includes("/auth/")) {
-        setLoading(false);
-        return;
-      }
-
-      // Busca dados do usuário usando o cookie (enviado automaticamente com withCredentials: true)
+      setLoading(true);
       const response = await fetchMe();
-      
-      // O backend retorna: { user: {...}, clinicId: "...", clinicMembershipId: "..." }
       if (response?.user?.id) {
+        const role = response.clinicRole?.value ?? response.clinicRole;
         setUser({
           id: response.user.id,
           name: response.user.name,
@@ -50,48 +56,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           cpf: response.user.cpf,
           clinicId: response.clinicId,
           clinicMembershipId: response.clinicMembershipId,
+          clinicRole: role as ClinicRoleType,
+          permissions: response.permissions ?? [],
+          isAnamneseDone: response.isAnamneseDone,
+          patientId: response.patientId,
+          professionalId: response.professionalId,
+          hasFranchise: response.hasFranchise,
         });
       } else {
         setUser(null);
       }
-    } catch (error) {
-      // Se falhar, o usuário não está autenticado ou o endpoint não existe
-      // Não fazemos nada aqui porque o layout já protege as rotas
+    } catch (err) {
       setUser(null);
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        const tenant = typeof window !== "undefined" ? extractTenantFromPath(window.location.pathname) : null;
+        const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
+        toast.error("Clínica não encontrada. Verifique o endereço.");
+        router.replace(loginPath);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchUser = async () => {
+    if (typeof window === "undefined" || !pathname) return;
+    if (pathname.includes("/auth/")) {
+      setLoading(false);
+      return;
+    }
+    await doFetchUser();
+  };
+
+  const refetchUser = async () => {
+    await doFetchUser();
+  };
+
   const handleLogout = async () => {
-    console.log("🔄 Iniciando logout...");
+    const tenant =
+      typeof window !== "undefined" ? extractTenantFromPath(window.location.pathname) : null;
+    const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
+
     try {
-      console.log("📤 Chamando logoutUser...");
       await logoutUser();
-      console.log("✅ Logout no backend concluído");
-      setUser(null);
       toast.success("Logout realizado com sucesso");
-    } catch (error: any) {
-      console.error("❌ Erro no logout:", error);
-      // Mesmo se der erro, limpa o estado
-      setUser(null);
-      toast.error(error?.response?.data?.message || "Erro ao fazer logout");
+    } catch (error: unknown) {
+      const msg =
+        error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : null;
+      toast.error(msg || "Erro ao fazer logout");
     } finally {
-      console.log("🚀 Redirecionando para login...");
-      // Sempre redireciona, mesmo se der erro
-      // Extrai o tenant do pathname atual
-      const tenant = extractTenantFromPath(window.location.pathname);
-      const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
-      window.location.href = loginPath;
+      setUser(null);
+      router.replace(loginPath);
     }
   };
 
+  useLayoutEffect(() => {
+    if (!pathname || pathname.includes("/auth/")) return;
+    setLoading(true);
+  }, [pathname]);
+
   useEffect(() => {
     fetchUser();
-  }, []);
+  }, [pathname]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, setUser, refetchUser: fetchUser, logout: handleLogout }}>
+    <AuthContext.Provider value={{ user, loading, setUser, refetchUser, logout: handleLogout }}>
       {children}
     </AuthContext.Provider>
   );

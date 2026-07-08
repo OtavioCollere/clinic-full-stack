@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { extractTenantFromPath } from "@/lib/tenant";
 import type { RegisterUserDto } from "./dtos/register-user.dto";
 
 const baseUrl = "users";
@@ -10,7 +11,7 @@ export async function registerUser(data : RegisterUserDto) {
 
 export async function loginUser(data : {email : string, password : string}) {
   return await api.post(
-    `${baseUrl}/authenticate`, 
+    `${baseUrl}/authenticate`,
     data,
     {
       withCredentials : true
@@ -19,10 +20,23 @@ export async function loginUser(data : {email : string, password : string}) {
 }
 
 export async function fetchMe() {
-  const response = await api.get(`${baseUrl}/me`, {
-    withCredentials : true
+  const tenant =
+    typeof window !== "undefined"
+      ? (extractTenantFromPath(window.location.pathname) ?? "")
+      : "";
+
+  const response = await fetch("/api/me", {
+    credentials: "include",
+    headers: {
+      ...(tenant && { "X-Tenant-ID": tenant }),
+    },
   });
-  return response.data;
+
+  if (!response.ok) {
+    throw new Error("Unauthorized");
+  }
+
+  return response.json();
 }
 
 export async function logoutUser() {
@@ -34,4 +48,31 @@ export async function logoutUser() {
     }
   );
   return response.data;
+}
+
+export async function editMyUser(data: { name?: string; email?: string }) {
+  const response = await api.patch(`${baseUrl}/me`, data);
+  return response.data as { name: string; email: string };
+}
+
+export async function changePasswordAuthenticated(
+  currentPassword: string,
+  newPassword: string
+) {
+  const response = await api.patch(`${baseUrl}/me/password`, {
+    currentPassword,
+    newPassword,
+  });
+  return response.data;
+}
+
+export async function loginAdmin(data: { email: string; password: string }) {
+  return api.post(`${baseUrl}/authenticate`, data, { withCredentials: true });
+}
+
+export async function fetchAdminMe(): Promise<{ id: string; role: string }> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+  const response = await fetch(`${apiUrl}/admin/me`, { credentials: "include" });
+  if (!response.ok) throw new Error("Unauthorized");
+  return response.json();
 }

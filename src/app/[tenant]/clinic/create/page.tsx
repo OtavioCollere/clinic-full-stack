@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -184,7 +184,7 @@ export default function CreateClinic() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Clinic Logo/Avatar Upload */}
             <div>
@@ -252,7 +252,7 @@ export default function CreateClinic() {
                 placeholder="e.g., Wellness Dental Clinic"
                 value={formData.clinicName}
                 onChange={handleChange}
-                className="h-11 bg-white border-border"
+                className="h-11 bg-card border-border"
                 required
               />
             </div>
@@ -272,7 +272,7 @@ export default function CreateClinic() {
                   value={formData.cnpj}
                   onChange={handleChange}
                   onBlur={handleCnpjBlur}
-                  className={`pl-12 h-11 bg-white border-border ${
+                  className={`pl-12 h-11 bg-card border-border ${
                     cnpjTouched
                       ? cnpjIsValid === false
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -301,7 +301,7 @@ export default function CreateClinic() {
                 placeholder="Conte-nos sobre sua clínica..."
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full border border-border rounded-lg p-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                className="w-full border border-border rounded-lg p-3 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                 rows={4}
               />
               <p className="text-xs text-muted-foreground">

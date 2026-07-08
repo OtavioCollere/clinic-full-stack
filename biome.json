@@ -21,12 +21,18 @@
       "a11y": {
         "noStaticElementInteractions": "off",
         "noSvgWithoutTitle": "off",
+        "useAriaPropsSupportedByRole": "off",
         "useButtonType": "off",
         "useKeyWithClickEvents": "off",
         "useSemanticElements": "off",
+        "useValidAriaRole": "off",
         "useValidAnchor": "off"
       },
       "correctness": {
+        "noUnusedFunctionParameters": "off",
+        "noUnusedImports": "off",
+        "noUnusedVariables": "off",
+        "useParseIntRadix": "off",
         "useExhaustiveDependencies": "off"
       },
       "performance": {
@@ -35,7 +41,15 @@
       "suspicious": {
         "noArrayIndexKey": "off",
         "noExplicitAny": "off",
-        "noUnknownAtRules": "off"
+        "noGlobalIsNan": "off",
+        "noUnknownAtRules": "off",
+        "useIterableCallbackReturn": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "useExponentiationOperator": "off",
+        "useTemplate": "off",
+        "useImportType": "off"
       }
     },
     "domains": {

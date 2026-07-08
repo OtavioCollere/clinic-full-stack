@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react";
 import Link from "next/link";
@@ -106,13 +106,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[#fdf8f0] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo & Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-blue-600">
-              <Stethoscope className="w-8 h-8 text-white" />
+            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-primary">
+              <Stethoscope className="w-8 h-8 text-primary-foreground" />
             </div>
             <span className="text-4xl font-bold text-foreground">Cliniker</span>
           </div>
@@ -135,7 +135,7 @@ export default function Register() {
                 placeholder="Your full name"
                 value={formData.name}
                 onChange={handleChange}
-                className="pl-12 h-14 text-lg bg-white border-border"
+                className="pl-12 h-14 text-lg bg-card border-border"
                 required
               />
             </div>
@@ -154,7 +154,7 @@ export default function Register() {
                 placeholder="you@clinic.com"
                 value={formData.email}
                 onChange={handleChange}
-                className="pl-12 h-14 text-lg bg-white border-border"
+                className="pl-12 h-14 text-lg bg-card border-border"
                 required
               />
             </div>
@@ -174,7 +174,7 @@ export default function Register() {
                 value={formData.cpf}
                 onChange={handleChange}
                 onBlur={handleCpfBlur}
-                className={`pl-12 h-14 text-lg bg-white border-border ${
+                className={`pl-12 h-14 text-lg bg-card border-border ${
                   cpfTouched
                     ? cpfIsValid === false
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -205,7 +205,7 @@ export default function Register() {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                className="pl-12 h-14 text-lg bg-white border-border"
+                className="pl-12 h-14 text-lg bg-card border-border"
                 required
               />
             </div>
@@ -227,7 +227,7 @@ export default function Register() {
                 placeholder="••••••••"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="pl-12 h-14 text-lg bg-white border-border"
+                className="pl-12 h-14 text-lg bg-card border-border"
                 required
               />
             </div>
@@ -263,7 +263,7 @@ export default function Register() {
             <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gradient-to-br from-white to-blue-50 text-muted-foreground">
+            <span className="px-2 bg-gradient-to-br from-white to-[#fdf8f0] text-muted-foreground">
               Já tem uma conta?
             </span>
           </div>

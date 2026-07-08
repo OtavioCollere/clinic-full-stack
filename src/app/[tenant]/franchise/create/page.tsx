@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -172,7 +172,7 @@ export default function CreateFranchise() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-blue-50">
       {/* Header */}
-      <div className="border-b border-border bg-white">
+      <div className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center gap-2 mb-6 sm:mb-8">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
@@ -219,7 +219,7 @@ export default function CreateFranchise() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Side - Form */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-border p-6 shadow-sm sticky top-8">
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-sm sticky top-8">
               <h2 className="text-xl font-bold text-foreground mb-6">
                 {editingId ? "Editar Franquia" : "Adicionar Franquia"}
               </h2>
@@ -237,7 +237,7 @@ export default function CreateFranchise() {
                     placeholder="ex: Unidade Centro"
                     value={formData.franchiseName}
                     onChange={handleChange}
-                    className={`h-10 bg-white border-border text-sm ${
+                    className={`h-10 bg-card border-border text-sm ${
                       errors.franchiseName ? "border-red-500 focus:ring-red-500" : ""
                     }`}
                   />
@@ -258,7 +258,7 @@ export default function CreateFranchise() {
                     placeholder="ex: Rua das Clínicas, 123"
                     value={formData.address}
                     onChange={handleChange}
-                    className={`h-10 bg-white border-border text-sm ${
+                    className={`h-10 bg-card border-border text-sm ${
                       errors.address ? "border-red-500 focus:ring-red-500" : ""
                     }`}
                   />
@@ -279,7 +279,7 @@ export default function CreateFranchise() {
                     placeholder="ex: 12345-678"
                     value={formData.zipCode}
                     onChange={handleChange}
-                    className={`h-10 bg-white border-border text-sm ${
+                    className={`h-10 bg-card border-border text-sm ${
                       errors.zipCode ? "border-red-500 focus:ring-red-500" : ""
                     }`}
                   />
@@ -299,7 +299,7 @@ export default function CreateFranchise() {
                     placeholder="Detalhes sobre esta localização..."
                     value={formData.description}
                     onChange={handleChange}
-                    className="w-full border border-border rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    className="w-full border border-border rounded-lg p-2 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                     rows={3}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -348,7 +348,7 @@ export default function CreateFranchise() {
               </div>
 
               {franchises.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-dashed border-border p-12 text-center">
+                <div className="bg-card rounded-2xl border border-dashed border-border p-12 text-center">
                   <div className="text-muted-foreground mb-2">
                     <Stethoscope className="w-8 h-8 mx-auto opacity-50 mb-3" />
                   </div>
@@ -362,7 +362,7 @@ export default function CreateFranchise() {
                   {franchises.map((franchise) => (
                     <div
                       key={franchise.id}
-                      className="bg-white rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow"
+                      className="bg-card rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex-1 min-w-0">
@@ -387,7 +387,7 @@ export default function CreateFranchise() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEditFranchise(franchise)}
-                          className="flex-1 p-2 text-sm font-medium text-primary hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                          className="flex-1 p-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center gap-2"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">Editar</span>
@@ -453,7 +453,7 @@ export default function CreateFranchise() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border bg-white py-6 mt-8 sm:mt-12">
+      <div className="border-t border-border bg-card py-6 mt-8 sm:mt-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">
             Etapa 2 de 2 – Criar unidades de franquia

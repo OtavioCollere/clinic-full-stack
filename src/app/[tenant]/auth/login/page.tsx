@@ -1,22 +1,20 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { loginUser } from "@/services/auth/auth.service";
-import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
 import { createTenantLink } from "@/lib/tenant-navigation";
+import { getPortalBaseForRole, type ClinicRoleType } from "@/lib/portal";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const tenant = useTenant();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,13 +32,10 @@ export default function Login() {
       
       if(response.status === 200){
         toast.success(response.data.message);
-        
-        // Aguarda um pouco para garantir que o cookie foi salvo
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Redireciona mantendo o tenant na URL se houver
-        const dashboardPath = createTenantLink(tenant, "/dashboard");
-        window.location.href = dashboardPath;
+        const role = (response.data?.clinicRole?.value ?? response.data?.clinicRole) as ClinicRoleType | undefined;
+        const portalBase = role ? getPortalBaseForRole(role) : "/dashboard";
+        const redirectPath = createTenantLink(tenant, portalBase);
+        window.location.href = redirectPath;
       }
 
     } catch (error: any) {
@@ -52,13 +47,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[#fdf8f0] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo & Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-blue-600">
-              <Stethoscope className="w-8 h-8 text-white" />
+            <div className="w-16 h-14 rounded-lg flex items-center justify-center bg-primary">
+              <Stethoscope className="w-8 h-8 text-primary-foreground" />
             </div>
             <span className="text-4xl font-bold text-foreground">Cliniker</span>
           </div>
@@ -80,7 +75,7 @@ export default function Login() {
                 placeholder="you@clinic.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-12 h-14 text-lg bg-white border-border"
+                className="pl-12 h-14 text-lg bg-card border-border"
                 required
               />
             </div>
@@ -98,7 +93,7 @@ export default function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-12 h-14 text-lg bg-white border-border"
+                className="pl-12 h-14 text-lg bg-card border-border"
                 required
               />
             </div>
@@ -109,9 +104,9 @@ export default function Login() {
               <input type="checkbox" className="rounded border-border" />
               <span className="text-foreground">Lembrar-me</span>
             </label>
-            <Link href="/forgot-password" className="text-primary hover:text-primary/90 font-medium">
+            <a href="/forgot-password" className="text-primary hover:text-primary/90 font-medium">
               Esqueceu a senha?
-            </Link>
+            </a>
           </div>
 
           <Button
@@ -122,28 +117,6 @@ export default function Login() {
             {isLoading ? "Entrando..." : "Entrar"}
           </Button>
         </form>
-
-        {/* Divider */}
-        <div className="relative my-8">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gradient-to-br from-white to-blue-50 text-muted-foreground">
-              Não tem uma conta?
-            </span>
-          </div>
-        </div>
-
-        {/* Register Link */}
-        <Link href={createTenantLink(tenant, "/auth/register")}>
-          <Button
-            variant="outline"
-            className="w-full h-14 text-lg border-border text-foreground hover:bg-secondary"
-          >
-            Criar conta
-          </Button>
-        </Link>
 
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground mt-8">
