@@ -21,8 +21,8 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-const ACCENT = "#7C3AED";
-const ACCENT_SOFT = "#a78bfa";
+const ACCENT = "#cb9849";
+const ACCENT_SOFT = "#f5b85a";
 
 function formatTenantName(slug: string | null): string {
   if (!slug) return "Clínica";
@@ -41,11 +41,11 @@ function FranchiseSwitcher({ isOpen }: { isOpen: boolean }) {
       <div
         className={`flex items-center gap-3 rounded-xl ${isOpen ? "px-3.5 py-3" : "justify-center p-2.5"}`}
         style={{
-          background: "linear-gradient(135deg, rgba(124,58,237,0.10), rgba(255,255,255,0.03))",
-          border: "1px solid rgba(124,58,237,0.18)",
+          background: "linear-gradient(135deg, rgba(203,152,73,0.10), rgba(255,255,255,0.03))",
+          border: "1px solid rgba(203,152,73,0.18)",
         }}
       >
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(124,58,237,0.2)" }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(203,152,73,0.2)" }}>
           <Hospital className="w-4 h-4" style={{ color: ACCENT_SOFT }} />
         </div>
         {isOpen && (
@@ -64,11 +64,11 @@ function FranchiseSwitcher({ isOpen }: { isOpen: boolean }) {
         isOpen ? "px-3.5 py-3" : "justify-center p-2.5"
       }`}
       style={{
-        background: "linear-gradient(135deg, rgba(124,58,237,0.14), rgba(255,255,255,0.04))",
-        border: "1px solid rgba(124,58,237,0.22)",
+        background: "linear-gradient(135deg, rgba(203,152,73,0.14), rgba(255,255,255,0.04))",
+        border: "1px solid rgba(203,152,73,0.22)",
       }}
     >
-      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(124,58,237,0.2)" }}>
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(203,152,73,0.2)" }}>
         <Hospital className="w-4 h-4" style={{ color: ACCENT_SOFT }} />
       </div>
       {isOpen && (
@@ -153,7 +153,7 @@ export function Sidebar({ menuItems, tenant, isOpen, onToggle }: SidebarProps) {
         ) : (
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[13px] font-bold"
-            style={{ background: "rgba(124,58,237,0.25)" }}
+            style={{ background: "rgba(203,152,73,0.25)" }}
             title={formatTenantName(tenant)}
           >
             {formatTenantName(tenant).charAt(0)}
@@ -202,15 +202,15 @@ export function Sidebar({ menuItems, tenant, isOpen, onToggle }: SidebarProps) {
                     ? isOpen
                       ? {
                           borderLeft: `2.5px solid ${ACCENT}`,
-                          background: "rgba(124,58,237,0.13)",
-                          boxShadow: "inset 0 0 24px rgba(124,58,237,0.07)",
+                          background: "rgba(203,152,73,0.13)",
+                          boxShadow: "inset 0 0 24px rgba(203,152,73,0.07)",
                           borderRadius: "0 10px 10px 0",
                           color: "#fff",
                           fontWeight: 600,
                           paddingLeft: "10px",
                         }
                       : {
-                          background: "rgba(124,58,237,0.16)",
+                          background: "rgba(203,152,73,0.16)",
                           borderRadius: "10px",
                           color: "#fff",
                           fontWeight: 600,

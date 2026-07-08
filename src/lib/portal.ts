@@ -12,8 +12,8 @@ import {
   Syringe,
   Stethoscope,
   CalendarCheck,
-  Package,
   Receipt,
+  Settings,
 } from "lucide-react";
 
 export type ClinicRoleType = "OWNER" | "ADMIN" | "PROFESSIONAL" | "PATIENT" | "COLLABORATOR";
@@ -75,13 +75,13 @@ export function canAccessPortal(role: ClinicRoleType, portal: PortalSegment): bo
 
 /** Menu items for admin/owner: full dashboard */
 const MENU_DASHBOARD: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Painel",         path: "/dashboard" },
-  { icon: Calendar,        label: "Consultas",       path: "/dashboard/appointments" },
-  { icon: Users,           label: "Pacientes",       path: "/dashboard/patients" },
-  { icon: UserCheck,       label: "Profissionais",   path: "/dashboard/professionals" },
-  { icon: Syringe,         label: "Procedimentos",   path: "/dashboard/procedures" },
-  { icon: Package,         label: "Insumos",         path: "/dashboard/inventory" },
-  { icon: Receipt,         label: "Comandas",        path: "/dashboard/comandas" },
+  { icon: LayoutDashboard, label: "Painel",          path: "/dashboard" },
+  { icon: Calendar,        label: "Consultas",        path: "/dashboard/appointments" },
+  { icon: Users,           label: "Pacientes",        path: "/dashboard/patients" },
+  { icon: UserCheck,       label: "Profissionais",    path: "/dashboard/professionals" },
+  { icon: Syringe,         label: "Procedimentos",    path: "/dashboard/procedures" },
+  { icon: Receipt,         label: "Comandas",         path: "/dashboard/billing" },
+  { icon: Settings,        label: "Configurações",    path: "/dashboard/settings" },
 ];
 
 /** Menu items for collaborator (receptionist): patients + appointments only */

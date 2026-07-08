@@ -95,7 +95,7 @@ export function AppLayout({ children, menuItems, tenant, userName, clinicName }:
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8" style={{ background: "var(--page-bg)" }}>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" style={{ background: "var(--page-bg)" }}>
           {children}
         </main>
       </div>

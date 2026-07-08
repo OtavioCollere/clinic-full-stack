@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  Settings,
   Syringe,
   TrendingUp,
   UserCheck,
@@ -44,14 +45,15 @@ const menuItems = [
   { icon: Package, label: "Insumos", path: "/dashboard/inventory" },
   { icon: Receipt, label: "Comandas", path: "/dashboard/billing" },
   { icon: TrendingUp, label: "Financeiro", path: "/dashboard/financial" },
+  { icon: Settings, label: "Configurações", path: "/dashboard/settings" },
 ];
 
-const ACTIVE_COLOR = "#a78bfa";
-const ACTIVE_BG = "rgba(124,58,237,0.12)";
-const ACTIVE_BORDER = "#7c3aed";
-const INACTIVE_TEXT = "rgba(229,237,249,0.86)";
-const INACTIVE_ICON = "rgba(229,237,249,0.58)";
-const LOGO_BG = "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)";
+const ACTIVE_COLOR = "#f5b85a";
+const ACTIVE_BG = "rgba(203,152,73,0.15)";
+const ACTIVE_BORDER = "#cb9849";
+const INACTIVE_TEXT = "rgba(245,235,215,0.82)";
+const INACTIVE_ICON = "rgba(245,235,215,0.50)";
+const LOGO_BG = "linear-gradient(135deg, #8a6020 0%, #cb9849 100%)";
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
