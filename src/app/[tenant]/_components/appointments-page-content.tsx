@@ -354,7 +354,11 @@ export default function AppointmentsPageContent({ portalBase, readonly = false, 
           </div>
           <Select value={franchiseFilter} onValueChange={setFranchiseFilter}>
             <SelectTrigger className="bg-card border-border h-9 text-sm w-44">
-              <SelectValue placeholder="Todas as franquias" />
+              <SelectValue>
+                {franchiseFilter === "all"
+                  ? "Todas as franquias"
+                  : (franchises.find((f) => f.id === franchiseFilter)?.name ?? "Todas as franquias")}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as franquias</SelectItem>
