@@ -302,7 +302,7 @@ export default function OnboardClinicPage() {
   // --- Success screen ---
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-violet-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-white to-[#fdf8f0] flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center space-y-6">
           <div className="flex justify-center">
             <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
@@ -331,7 +331,7 @@ export default function OnboardClinicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-violet-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white to-[#fdf8f0] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
