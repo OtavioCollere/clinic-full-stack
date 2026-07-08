@@ -13,7 +13,7 @@ import { useTenant } from "@/hooks/use-tenant";
 import { createTenantLink } from "@/lib/tenant-navigation";
 import { validateCPF } from "@/utils/validate-cpf";
 import { toast } from "sonner";
-import type { CreateAnamnesisDto, FacialRegion } from "@/services/patients/dtos/create-anamnesis.dto";
+import type { CreateAnamnesisDto } from "@/services/patients/dtos/create-anamnesis.dto";
 import { createAnamnesis } from "@/services/patients/anamnesis.service";
 
 interface UserFormData {
@@ -317,21 +317,21 @@ export default function PatientRegistration() {
       aestheticHistory: {
         hadPreviousAestheticTreatment: medicalData.hadAestheticTreatment ?? false,
         botulinumToxin: medicalData.botox ?? false,
-        botulinumRegion: medicalData.botoxRegion as FacialRegion | undefined,
+        botulinumRegion: medicalData.botoxRegion,
         filler: medicalData.fillers ?? false,
-        fillerRegion: medicalData.fillersRegion as FacialRegion | undefined,
+        fillerRegion: medicalData.fillersRegion,
         fillerProduct: medicalData.fillersProduct,
         suspensionThreads: medicalData.threads ?? false,
-        suspensionThreadsRegion: medicalData.threadsRegion as FacialRegion | undefined,
+        suspensionThreadsRegion: medicalData.threadsRegion,
         suspensionThreadsProduct: medicalData.threadsProduct,
         surgicalLift: medicalData.surgicalLift ?? false,
-        surgicalLiftRegion: medicalData.surgicalLiftRegion as FacialRegion | undefined,
+        surgicalLiftRegion: medicalData.surgicalLiftRegion,
         surgicalLiftProduct: medicalData.surgicalLiftProduct,
         chemicalPeeling: medicalData.chemicalPeel ?? false,
-        chemicalPeelingRegion: medicalData.chemicalPeelRegion as FacialRegion | undefined,
+        chemicalPeelingRegion: medicalData.chemicalPeelRegion,
         chemicalPeelingProduct: medicalData.chemicalPeelProduct,
         laser: medicalData.laser ?? false,
-        laserRegion: medicalData.laserRegion as FacialRegion | undefined,
+        laserRegion: medicalData.laserRegion,
         laserProduct: medicalData.laserProduct,
         exposedToHeatOrColdWork: medicalData.exposedToHeatCold ?? false,
       },

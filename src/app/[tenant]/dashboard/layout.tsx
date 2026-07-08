@@ -8,8 +8,9 @@ export default async function Layout({
   params 
 }: { 
   children: React.ReactNode;
-  params?: { tenant?: string };
+  params: Promise<{ tenant: string }>;
 }) {
+  const { tenant } = await params;
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("access_token");
   const headersList = await headers();
@@ -17,8 +18,8 @@ export default async function Layout({
 
   if (!accessToken) {
     // Tenta pegar o tenant dos params ou do pathname
-    const tenant = params?.tenant || extractTenantFromPath(pathname);
-    const loginPath = tenant ? addTenantToPath(tenant, "/auth/login") : "/auth/login";
+    const currentTenant = tenant || extractTenantFromPath(pathname);
+    const loginPath = currentTenant ? addTenantToPath(currentTenant, "/auth/login") : "/auth/login";
     redirect(loginPath);
   }
 
