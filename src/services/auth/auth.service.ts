@@ -1,5 +1,4 @@
 import { api } from "@/lib/api";
-import { extractTenantFromPath } from "@/lib/tenant";
 import type { RegisterUserDto } from "./dtos/register-user.dto";
 
 const baseUrl = "users";
@@ -20,23 +19,8 @@ export async function loginUser(data : {email : string, password : string}) {
 }
 
 export async function fetchMe() {
-  const tenant =
-    typeof window !== "undefined"
-      ? (extractTenantFromPath(window.location.pathname) ?? "")
-      : "";
-
-  const response = await fetch("/api/me", {
-    credentials: "include",
-    headers: {
-      ...(tenant && { "X-Tenant-ID": tenant }),
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Unauthorized");
-  }
-
-  return response.json();
+  const response = await api.get(`${baseUrl}/me`);
+  return response.data;
 }
 
 export async function logoutUser() {

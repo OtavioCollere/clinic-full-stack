@@ -16,64 +16,6 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Remove o tenant do pathname para verificar rotas protegidas
-  const routeWithoutTenant = tenant
-    ? pathname.replace(`/${tenant}`, "") || "/"
-    : pathname;
-
-  const isProtectedRoute =
-    routeWithoutTenant.startsWith("/dashboard") ||
-    routeWithoutTenant.startsWith("/professional") ||
-    routeWithoutTenant.startsWith("/patient") ||
-    routeWithoutTenant.startsWith("/home");
-
-  if (isProtectedRoute) {
-    const accessToken = request.cookies.get("access_token");
-
-    if (!accessToken) {
-      const loginPath = tenant
-        ? `/${tenant}/auth/login`
-        : "/auth/login";
-      return NextResponse.redirect(new URL(loginPath, request.url));
-    }
-
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-      const cookieHeader = request.headers.get("cookie") || "";
-      const headers: HeadersInit = { Cookie: cookieHeader };
-      if (tenant) {
-        headers["X-Tenant-ID"] = tenant;
-      }
-
-      const response = await fetch(`${apiUrl}/users/me`, {
-        method: "GET",
-        headers,
-        credentials: "include",
-      });
-
-      if (!response.ok || response.status === 401) {
-        const loginPath = tenant
-          ? `/${tenant}/auth/login`
-          : "/auth/login";
-        return NextResponse.redirect(new URL(loginPath, request.url));
-      }
-
-      const data = await response.json();
-      if (!data?.user?.id) {
-        const loginPath = tenant
-          ? `/${tenant}/auth/login`
-          : "/auth/login";
-        return NextResponse.redirect(new URL(loginPath, request.url));
-      }
-    } catch (error) {
-      console.error("[middleware] /users/me fetch failed:", error);
-      const loginPath = tenant
-        ? `/${tenant}/auth/login`
-        : "/auth/login";
-      return NextResponse.redirect(new URL(loginPath, request.url));
-    }
-  }
-
   return NextResponse.next();
 }
 
