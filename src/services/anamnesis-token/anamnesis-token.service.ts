@@ -1,8 +1,9 @@
 import axios from "axios";
+import { getApiUrl } from "@/lib/api-url";
 import type { CreateAnamnesisDto } from "@/services/patients/dtos/create-anamnesis.dto";
 
 const publicApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: getApiUrl(),
   withCredentials: false,
 });
 

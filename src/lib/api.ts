@@ -1,10 +1,11 @@
 // src/services/api.ts
 
 import axios from "axios";
+import { getApiUrl } from "@/lib/api-url";
 import { extractTenantFromPath, addTenantToPath } from "@/lib/tenant";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: getApiUrl(),
   withCredentials: true, // 🔥 obrigatório pra cookie
 });
 

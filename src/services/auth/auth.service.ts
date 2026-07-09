@@ -1,7 +1,8 @@
 import { api } from "@/lib/api";
+import { getApiUrl } from "@/lib/api-url";
 import type { RegisterUserDto } from "./dtos/register-user.dto";
 
-const baseUrl = "users";
+const baseUrl = "/users";
 
 export async function registerUser(data : RegisterUserDto) {
   const response = await api.post(`${baseUrl}/register-user`, data);
@@ -55,7 +56,7 @@ export async function loginAdmin(data: { email: string; password: string }) {
 }
 
 export async function fetchAdminMe(): Promise<{ id: string; role: string }> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+  const apiUrl = getApiUrl();
   const response = await fetch(`${apiUrl}/admin/me`, { credentials: "include" });
   if (!response.ok) throw new Error("Unauthorized");
   return response.json();

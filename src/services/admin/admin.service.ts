@@ -1,4 +1,6 @@
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+import { getApiUrl } from "@/lib/api-url";
+
+const API = getApiUrl();
 
 export interface AdminClinic {
   id: string;

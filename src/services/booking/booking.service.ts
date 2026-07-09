@@ -1,7 +1,8 @@
 import axios from "axios";
+import { getApiUrl } from "@/lib/api-url";
 
 const publicApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: getApiUrl(),
   withCredentials: false,
 });
 

@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function GET(request: NextRequest) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const apiUrl = getApiUrl();
   const cookieHeader = request.headers.get("cookie") || "";
   const tenant = request.headers.get("x-tenant-id") || "";
 

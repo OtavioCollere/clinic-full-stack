@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function POST(request: NextRequest) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const apiUrl = getApiUrl();
   const adminKey = process.env.ADMIN_API_KEY;
 
   if (!adminKey) {
