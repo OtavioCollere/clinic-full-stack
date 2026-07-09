@@ -19,6 +19,7 @@ env:
   SERVICE: cliniker-frontend
   REPO: cliniker
   IMAGE: web
+  DEFAULT_API_URL: https://cliniker-api-769327558062.southamerica-east1.run.app
 
 jobs:
   deploy:
@@ -44,7 +45,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
-          : "${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL secret is required}"
+          NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-${{ env.DEFAULT_API_URL }}}"
           TAG="${{ github.sha }}"
 
           docker build \
@@ -59,7 +60,7 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_APP_URL: ${{ secrets.NEXT_APP_URL }}
         run: |
-          : "${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL secret is required}"
+          NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-${{ env.DEFAULT_API_URL }}}"
           TAG="${{ github.sha }}"
 
           gcloud run deploy ${{ env.SERVICE }} \
