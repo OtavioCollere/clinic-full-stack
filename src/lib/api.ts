@@ -9,6 +9,11 @@ export const api = axios.create({
   withCredentials: true, // 🔥 obrigatório pra cookie
 });
 
+const refreshApi = axios.create({
+  baseURL: getApiUrl(),
+  withCredentials: true,
+});
+
 // 🔥 INTERCEPTOR DE REQUEST - Adiciona o tenant em todas as requisições
 api.interceptors.request.use(
   (config) => {
@@ -28,16 +33,30 @@ api.interceptors.request.use(
 );
 
 // 🔥 INTERCEPTOR DE RESPONSE
+let refreshPromise: Promise<unknown> | null = null;
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url ?? "";
+    const isRefreshRequest = requestUrl.includes("/users/refresh");
+    const isAuthRequest = requestUrl.includes("/users/authenticate");
+
+    if (!originalRequest || isRefreshRequest || isAuthRequest) {
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        await api.post("/users/refresh");
+        refreshPromise ??= refreshApi
+          .post("/users/refresh")
+          .finally(() => {
+            refreshPromise = null;
+          });
+        await refreshPromise;
         return api(originalRequest);
       } catch (refreshError) {
         if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/login")) {
