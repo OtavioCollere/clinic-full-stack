@@ -1,6 +1,5 @@
 ﻿import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import DashboardWrapper from "@/components/DashboardWrapper";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 
 // Types
@@ -46,8 +45,7 @@ interface FormErrors {
 const statusOptions: ServiceOrderStatus[] = ["PENDING", "IN_PROGRESS", "DONE", "CANCELED"];
 
 export default function CreateServiceOrder() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<ServiceOrderStatus | undefined>();
   const [items, setItems] = useState<FormItem[]>([
@@ -67,11 +65,7 @@ export default function CreateServiceOrder() {
     let isValid = true;
 
     if (items.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "You must add at least one appointment item.",
-        variant: "destructive",
-      });
+      toast.error("You must add at least one appointment item.");
       return false;
     }
 
@@ -156,10 +150,7 @@ export default function CreateServiceOrder() {
     // Mock API call
     setTimeout(() => {
       console.log("Service Order Payload:", payload);
-      toast({
-        title: "Success!",
-        description: "Comanda criada com sucesso",
-      });
+      toast.success("Comanda criada com sucesso");
 
       // Reset form
       setStatus(undefined);
@@ -174,11 +165,11 @@ export default function CreateServiceOrder() {
 
   // Handle cancel
   const handleCancel = () => {
-    navigate(-1);
+    router.back();
   };
 
   return (
-    <DashboardWrapper>
+    <>
       <div className="space-y-8 px-4 md:px-8">
         {/* Header */}
         <div>
@@ -388,6 +379,6 @@ export default function CreateServiceOrder() {
           </CardContent>
         </Card>
       </div>
-    </DashboardWrapper>
+    </>
   );
 }

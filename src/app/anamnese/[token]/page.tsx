@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import MedicalForm from "@/app/[tenant]/dashboard/_components/medical-form";
 import {
-  validateAnamnesisToken,
-  submitAnamnesisViaToken,
   type AnamnesisTokenInfo,
+  submitAnamnesisViaToken,
+  validateAnamnesisToken,
 } from "@/services/anamnesis-token/anamnesis-token.service";
 import type {
   CreateAnamnesisDto,
@@ -152,7 +152,13 @@ function mapFormToDto(data: MedicalFormData): CreateAnamnesisDto {
   };
 }
 
-type PageState = "loading" | "valid" | "invalid" | "expired" | "used" | "submitted";
+type PageState =
+  | "loading"
+  | "valid"
+  | "invalid"
+  | "expired"
+  | "used"
+  | "submitted";
 
 export default function AnamnesisTokenPage() {
   const params = useParams<{ token: string }>();
@@ -204,7 +210,9 @@ export default function AnamnesisTokenPage() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <div className="text-2xl font-bold text-purple-700 mb-1">Cliniker</div>
+          <div className="text-2xl font-bold text-purple-700 mb-1">
+            Cliniker
+          </div>
           <div className="text-sm text-gray-500">Sistema de Gestão Clínica</div>
         </div>
 
@@ -260,8 +268,8 @@ export default function AnamnesisTokenPage() {
               Anamnese enviada!
             </h2>
             <p className="text-gray-500">
-              Obrigada, {tokenInfo?.patientName}. Sua anamnese foi registrada com
-              sucesso. A equipe da clínica já pode acessá-la.
+              Obrigada, {tokenInfo?.patientName}. Sua anamnese foi registrada
+              com sucesso. A equipe da clínica já pode acessá-la.
             </p>
           </div>
         )}

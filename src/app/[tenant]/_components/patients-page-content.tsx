@@ -16,6 +16,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import { useAuthContext } from "@/context/AuthContext";
 import { useTenant } from "@/hooks/use-tenant";
 import { api } from "@/lib/api";
@@ -77,7 +77,9 @@ export default function PatientsPageContent({
   const [viewMode, setViewMode] = useState<ViewMode>("pacientes");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
-  const [resendingPatientId, setResendingPatientId] = useState<string | null>(null);
+  const [resendingPatientId, setResendingPatientId] = useState<string | null>(
+    null,
+  );
   const { user } = useAuthContext();
 
   useEffect(() => {
@@ -431,7 +433,11 @@ export default function PatientsPageContent({
                           type="button"
                           className="inline-flex flex-1 items-center justify-center gap-1.5 px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none sm:flex-none"
                           onClick={(event) =>
-                            openPatientHistory(event, patient.id, "procedimentos")
+                            openPatientHistory(
+                              event,
+                              patient.id,
+                              "procedimentos",
+                            )
                           }
                           title="Ver histórico de procedimentos"
                         >

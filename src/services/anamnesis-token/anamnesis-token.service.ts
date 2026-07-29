@@ -12,16 +12,19 @@ export interface AnamnesisTokenInfo {
   expiresAt: string;
 }
 
-export async function validateAnamnesisToken(token: string): Promise<AnamnesisTokenInfo> {
-  const res = await publicApi.get<{ success: boolean; data: AnamnesisTokenInfo }>(
-    `/anamnesis/token/${token}`
-  );
+export async function validateAnamnesisToken(
+  token: string,
+): Promise<AnamnesisTokenInfo> {
+  const res = await publicApi.get<{
+    success: boolean;
+    data: AnamnesisTokenInfo;
+  }>(`/anamnesis/token/${token}`);
   return res.data.data;
 }
 
 export async function submitAnamnesisViaToken(
   token: string,
-  data: CreateAnamnesisDto
+  data: CreateAnamnesisDto,
 ): Promise<void> {
   await publicApi.post(`/anamnesis/token/${token}`, data);
 }
